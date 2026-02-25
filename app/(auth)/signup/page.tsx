@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { toast } from "@/hooks/use-toast";
-import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -13,7 +13,6 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
 
   const passwordStrength = password.length === 0 ? 0 : password.length < 6 ? 1 : password.length < 10 ? 2 : 3;
   const strengthColors = ["", "#ef4444", "#f59e0b", "#22c55e"];
@@ -31,22 +30,28 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      const emailRedirectTo = `${window.location.origin}/api/auth/callback?next=/dashboard`;
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(), password,
-        options: { emailRedirectTo, data: { full_name: fullName.trim() } },
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName.trim(), email: email.trim(), password }),
       });
-      if (error) throw error;
-      if (data.session) {
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Signup failed", description: data.error || "Could not create your account.", variant: "destructive" });
+        return;
+      }
+      // Auto sign-in after registration
+      const result = await signIn("credentials", { email: email.trim(), password, redirect: false });
+      if (result?.error) {
+        toast({ title: "Account created", description: "Please sign in with your new credentials." });
+        router.push("/login");
+      } else {
         toast({ title: "Account created", description: "You're signed in and ready to go." });
         router.push("/dashboard");
         router.refresh();
-        return;
       }
-      toast({ title: "Check your email", description: "We sent a confirmation link to complete your signup." });
-      router.push("/login");
-    } catch (error) {
-      toast({ title: "Signup failed", description: error instanceof Error ? error.message : "Could not create your account.", variant: "destructive" });
+    } catch {
+      toast({ title: "Signup failed", description: "Could not create your account.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -55,11 +60,9 @@ export default function SignupPage() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     try {
-      const oauthRedirectTo = `${window.location.origin}/api/auth/callback?next=/dashboard`;
-      const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: oauthRedirectTo } });
-      if (error) throw error;
-    } catch (error) {
-      toast({ title: "Google signup failed", description: error instanceof Error ? error.message : "Could not continue with Google.", variant: "destructive" });
+      await signIn("google", { callbackUrl: "/dashboard" });
+    } catch {
+      toast({ title: "Google signup failed", description: "Could not continue with Google.", variant: "destructive" });
       setGoogleLoading(false);
     }
   }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth";
 import { handleLinkedInCallback } from "@/lib/linkedin";
 
 function redirectWithError(request: NextRequest, message: string) {
@@ -29,11 +29,7 @@ export async function GET(request: NextRequest) {
     return redirectWithError(request, "Invalid LinkedIn OAuth state. Please try again.");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await requireAuth();
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirectTo", "/linkedin-import");
@@ -41,25 +37,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const linkedInProfile = await handleLinkedInCallback(
-      code,
-      request.nextUrl.origin
-    );
-
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        full_name: linkedInProfile.name,
-        linkedin_data: JSON.stringify(linkedInProfile),
-        skills: linkedInProfile.skills,
-        avatar_url: linkedInProfile.profilePicture || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-
-    if (updateError) {
-      throw updateError;
-    }
+    await handleLinkedInCallback(code, request.nextUrl.origin);
 
     const successUrl = new URL("/linkedin-import", request.url);
     successUrl.searchParams.set("connected", "true");

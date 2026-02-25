@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Upload, History, CreditCard, Settings, LogOut, Download } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { useMemo } from "react";
+import { signOut } from "next-auth/react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -27,11 +26,9 @@ function getInitials(email?: string) {
 export function DashboardSidebar({ userEmail }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/");
+    await signOut({ callbackUrl: "/" });
     router.refresh();
   }
 

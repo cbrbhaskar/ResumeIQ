@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import prisma from "@/lib/prisma";
 import { ScoreGauge } from "@/components/results/score-gauge";
 import { ScoreBreakdown } from "@/components/results/score-breakdown";
 import { KeywordTable } from "@/components/results/keyword-table";
@@ -23,7 +25,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { Scan, ScanResult } from "@/lib/types";
+import { Scan, ScanResult, FormattingIssue, Suggestion, SectionQuality } from "@/lib/types";
 
 interface ResultsPageProps {
   params: Promise<{ id: string }>;
@@ -31,37 +33,55 @@ interface ResultsPageProps {
 
 export default async function ResultsPage({ params }: ResultsPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
 
-  if (!user) redirect("/login");
+  const userId = (session.user as { id: string }).id;
 
-  const { data, error } = await supabase
-    .from("scans")
-    .select(`
-      id, user_id, resume_url, resume_filename, job_description,
-      job_title, ats_score, status, created_at,
-      scan_results (
-        id, scan_id, keyword_match_score, skills_match_score,
-        experience_score, formatting_score, title_alignment_score,
-        overall_score, keyword_matches, missing_keywords,
-        hard_skills_matched, hard_skills_missing, soft_skills_matched,
-        soft_skills_missing, formatting_issues, suggestions,
-        section_quality, seniority_alignment, recruiter_readability, created_at
-      )
-    `)
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
+  const data = await prisma.scan.findFirst({
+    where: { id, userId },
+    include: { result: true },
+  });
 
-  if (error || !data) notFound();
+  if (!data) notFound();
 
-  const scan = data as Scan & { scan_results: ScanResult[] };
-  const result = Array.isArray(scan.scan_results)
-    ? scan.scan_results[0]
-    : scan.scan_results;
+  // Map Prisma camelCase → existing snake_case types
+  const scan = {
+    id: data.id,
+    user_id: data.userId,
+    resume_url: data.resumeUrl,
+    resume_filename: data.resumeFilename,
+    job_description: data.jobDescription ?? "",
+    job_title: data.jobTitle,
+    ats_score: data.atsScore,
+    status: data.status,
+    created_at: data.createdAt.toISOString(),
+  } as Scan;
+
+  const result = data.result
+    ? ({
+        id: data.result.id,
+        scan_id: data.result.scanId,
+        keyword_match_score: data.result.keywordMatchScore,
+        skills_match_score: data.result.skillsMatchScore,
+        experience_score: data.result.experienceScore,
+        formatting_score: data.result.formattingScore,
+        title_alignment_score: data.result.titleAlignmentScore,
+        overall_score: data.result.overallScore,
+        keyword_matches: data.result.keywordMatches as string[],
+        missing_keywords: data.result.missingKeywords as string[],
+        hard_skills_matched: data.result.hardSkillsMatched as string[],
+        hard_skills_missing: data.result.hardSkillsMissing as string[],
+        soft_skills_matched: data.result.softSkillsMatched as string[],
+        soft_skills_missing: data.result.softSkillsMissing as string[],
+        formatting_issues: data.result.formattingIssues as unknown as FormattingIssue[],
+        suggestions: data.result.suggestions as unknown as Suggestion[],
+        section_quality: data.result.sectionQuality as unknown as SectionQuality,
+        seniority_alignment: data.result.seniorityAlignment,
+        recruiter_readability: data.result.recruiterReadability,
+        created_at: data.result.createdAt.toISOString(),
+      } as ScanResult)
+    : null;
 
   if (!result || scan.status !== "completed") {
     const message =
@@ -165,8 +185,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
           {
             label: "Hard Skills",
             value: result.hard_skills_matched.length,
-            total:
-              result.hard_skills_matched.length + result.hard_skills_missing.length,
+            total: result.hard_skills_matched.length + result.hard_skills_missing.length,
             icon: Code2,
             color: "text-blue-600 dark:text-blue-400",
             bg: "bg-blue-50 dark:bg-blue-950/30",
@@ -216,10 +235,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
           <Target className="w-4 h-4 text-violet-500 dark:text-violet-400" />
           Keyword Analysis
         </h3>
-        <KeywordTable
-          matched={result.keyword_matches}
-          missing={result.missing_keywords}
-        />
+        <KeywordTable matched={result.keyword_matches} missing={result.missing_keywords} />
       </div>
 
       {/* Skills */}
@@ -242,10 +258,7 @@ export default async function ResultsPage({ params }: ResultsPageProps) {
           <CheckCircle2 className="w-4 h-4 text-violet-500 dark:text-violet-400" />
           Formatting & ATS Safety
         </h3>
-        <FormattingIssues
-          issues={result.formatting_issues}
-          recruiterReadability={result.recruiter_readability}
-        />
+        <FormattingIssues issues={result.formatting_issues} recruiterReadability={result.recruiter_readability} />
       </div>
 
       {/* Suggestions */}

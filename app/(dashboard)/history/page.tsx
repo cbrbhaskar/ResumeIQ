@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -15,23 +17,38 @@ import { formatDate, getScoreColor, getScoreLabel } from "@/lib/utils";
 import { Scan } from "@/lib/types";
 
 export default async function HistoryPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
 
-  if (!user) return null;
+  const userId = (session.user as { id: string }).id;
 
-  const { data: scans } = await supabase
-    .from("scans")
-    .select(
-      "id, job_title, ats_score, status, created_at, resume_filename, job_description"
-    )
-    .eq("user_id", user.id)
-    .eq("status", "completed")
-    .order("created_at", { ascending: false });
+  const prismaScans = await prisma.scan.findMany({
+    where: { userId, status: "completed" },
+    select: {
+      id: true,
+      userId: true,
+      resumeUrl: true,
+      resumeFilename: true,
+      jobDescription: true,
+      jobTitle: true,
+      atsScore: true,
+      status: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-  const allScans = (scans || []) as Scan[];
+  const allScans = prismaScans.map((s) => ({
+    id: s.id,
+    user_id: s.userId,
+    resume_url: s.resumeUrl,
+    resume_filename: s.resumeFilename,
+    job_description: s.jobDescription ?? "",
+    job_title: s.jobTitle,
+    ats_score: s.atsScore,
+    status: s.status,
+    created_at: s.createdAt.toISOString(),
+  })) as Scan[];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -108,7 +125,6 @@ export default async function HistoryPage() {
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0 ml-3">
-                    {/* Score trend */}
                     {scoreDiff !== null && (
                       <div
                         className={`flex items-center gap-0.5 text-xs font-semibold ${
@@ -132,11 +148,7 @@ export default async function HistoryPage() {
 
                     {scan.ats_score !== null && (
                       <div className="text-right">
-                        <p
-                          className={`text-xl font-extrabold tabular-nums ${getScoreColor(
-                            scan.ats_score
-                          )}`}
-                        >
+                        <p className={`text-xl font-extrabold tabular-nums ${getScoreColor(scan.ats_score)}`}>
                           {scan.ats_score}
                         </p>
                         <p className="text-[10px] text-gray-400 dark:text-zinc-500 leading-tight">

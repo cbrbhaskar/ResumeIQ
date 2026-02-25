@@ -1,26 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth";
 import { analyzeResume } from "@/lib/ats/analyzer";
 import { getUserUsage, incrementUsage } from "@/lib/usage";
+import prisma from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
-    // Use cookie-based anon client for auth, admin client for DB writes
-    const authClient = await createClient();
-    const supabase = createAdminClient();
-
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
     const { resumeText, jobDescription, resumeUrl, resumeFileName } = body;
 
-    // Validate inputs
     if (!resumeText || resumeText.trim().length < 50) {
       return NextResponse.json(
         { error: "Resume text is too short or empty." },
@@ -35,7 +26,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check usage limits
     const usage = await getUserUsage(user.id);
     if (!usage.can_scan) {
       return NextResponse.json(
@@ -48,95 +38,66 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create scan record
-    const { data: scan, error: scanError } = await supabase
-      .from("scans")
-      .insert({
-        user_id: user.id,
-        resume_url: resumeUrl || null,
-        resume_filename: resumeFileName || null,
-        job_description: jobDescription,
+    const scan = await prisma.scan.create({
+      data: {
+        userId: user.id,
+        resumeUrl: resumeUrl || null,
+        resumeFilename: resumeFileName || null,
+        jobDescription,
         status: "processing",
-      })
-      .select()
-      .single();
+      },
+    });
 
-    if (scanError) {
-      console.error("Scan insert error:", scanError);
-      return NextResponse.json(
-        { error: "Failed to create scan. Please try again." },
-        { status: 500 }
-      );
-    }
-
-    // Run ATS analysis
     let analysisResult;
     try {
       analysisResult = await analyzeResume(resumeText, jobDescription);
     } catch (err) {
       console.error("Analysis error:", err);
-      // Mark scan as failed
-      await supabase
-        .from("scans")
-        .update({ status: "failed" })
-        .eq("id", scan.id);
-
-      return NextResponse.json(
-        { error: "Analysis failed. Please try again." },
-        { status: 500 }
-      );
+      await prisma.scan.update({ where: { id: scan.id }, data: { status: "failed" } });
+      return NextResponse.json({ error: "Analysis failed. Please try again." }, { status: 500 });
     }
 
-    // Save scan results
-    const { error: resultError } = await supabase.from("scan_results").insert({
-      scan_id: scan.id,
-      keyword_match_score: analysisResult.keyword_match_score,
-      skills_match_score: analysisResult.skills_match_score,
-      experience_score: analysisResult.experience_score,
-      formatting_score: analysisResult.formatting_score,
-      title_alignment_score: analysisResult.title_alignment_score,
-      overall_score: analysisResult.overall_score,
-      keyword_matches: analysisResult.keyword_matches,
-      missing_keywords: analysisResult.missing_keywords,
-      hard_skills_matched: analysisResult.hard_skills_matched,
-      hard_skills_missing: analysisResult.hard_skills_missing,
-      soft_skills_matched: analysisResult.soft_skills_matched,
-      soft_skills_missing: analysisResult.soft_skills_missing,
-      formatting_issues: analysisResult.formatting_issues,
-      suggestions: analysisResult.suggestions,
-      section_quality: analysisResult.section_quality,
-      seniority_alignment: analysisResult.seniority_alignment || "",
-      recruiter_readability: analysisResult.recruiter_readability || 50,
-    });
-
-    if (resultError) {
-      console.error("Result insert error:", resultError);
-      // Mark scan as failed so the user sees a clear error, not "still processing"
-      await supabase
-        .from("scans")
-        .update({ status: "failed" })
-        .eq("id", scan.id);
+    try {
+      await prisma.scanResult.create({
+        data: {
+          scanId: scan.id,
+          keywordMatchScore: analysisResult.keyword_match_score,
+          skillsMatchScore: analysisResult.skills_match_score,
+          experienceScore: analysisResult.experience_score,
+          formattingScore: analysisResult.formatting_score,
+          titleAlignmentScore: analysisResult.title_alignment_score,
+          overallScore: analysisResult.overall_score,
+          keywordMatches: analysisResult.keyword_matches,
+          missingKeywords: analysisResult.missing_keywords,
+          hardSkillsMatched: analysisResult.hard_skills_matched,
+          hardSkillsMissing: analysisResult.hard_skills_missing,
+          softSkillsMatched: analysisResult.soft_skills_matched,
+          softSkillsMissing: analysisResult.soft_skills_missing,
+          formattingIssues: analysisResult.formatting_issues as unknown as object,
+          suggestions: analysisResult.suggestions as unknown as object,
+          sectionQuality: analysisResult.section_quality as unknown as object,
+          seniorityAlignment: analysisResult.seniority_alignment || "",
+          recruiterReadability: analysisResult.recruiter_readability || 50,
+        },
+      });
+    } catch (err) {
+      console.error("Result insert error:", err);
+      await prisma.scan.update({ where: { id: scan.id }, data: { status: "failed" } });
       return NextResponse.json(
         { error: "Failed to save analysis results. Please try again." },
         { status: 500 }
       );
     }
 
-    // Update scan status and score
-    const { error: updateError } = await supabase
-      .from("scans")
-      .update({
+    await prisma.scan.update({
+      where: { id: scan.id },
+      data: {
         status: "completed",
-        ats_score: analysisResult.overall_score,
-        job_title: analysisResult.job_title || null,
-      })
-      .eq("id", scan.id);
+        atsScore: analysisResult.overall_score,
+        jobTitle: analysisResult.job_title || null,
+      },
+    });
 
-    if (updateError) {
-      console.error("Scan update error:", updateError);
-    }
-
-    // Increment usage counter for free users
     await incrementUsage(user.id);
 
     return NextResponse.json({

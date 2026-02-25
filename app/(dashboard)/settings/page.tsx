@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { User, Lock, Trash2, AlertTriangle } from "lucide-react";
 
 export default function SettingsPage() {
-  const supabase = useMemo(() => createClient(), []);
+  const { data: session } = useSession();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -18,36 +18,22 @@ export default function SettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
-    async function loadProfile() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setEmail(user.email || "");
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", user.id)
-          .single();
-        if (profile?.full_name) setFullName(profile.full_name);
-      }
+    if (session?.user) {
+      setEmail(session.user.email || "");
+      setFullName(session.user.name || "");
     }
-    loadProfile();
-  }, [supabase]);
+  }, [session]);
 
   async function handleUpdateName(e: React.FormEvent) {
     e.preventDefault();
     setNameLoading(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      await supabase.auth.updateUser({ data: { full_name: fullName } });
-      await supabase
-        .from("profiles")
-        .update({ full_name: fullName })
-        .eq("id", user.id);
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName }),
+      });
+      if (!res.ok) throw new Error();
       toast({ title: "Name updated successfully" });
     } catch {
       toast({ title: "Error", description: "Could not update name", variant: "destructive" });
@@ -59,34 +45,29 @@ export default function SettingsPage() {
   async function handleUpdatePassword(e: React.FormEvent) {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "New password and confirmation must match.",
-        variant: "destructive",
-      });
+      toast({ title: "Passwords don't match", description: "New password and confirmation must match.", variant: "destructive" });
       return;
     }
     if (newPassword.length < 8) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 8 characters.",
-        variant: "destructive",
-      });
+      toast({ title: "Password too short", description: "Password must be at least 8 characters.", variant: "destructive" });
       return;
     }
     setPasswordLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
       toast({ title: "Password updated successfully" });
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Could not update password",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Could not update password", variant: "destructive" });
     } finally {
       setPasswordLoading(false);
     }
@@ -171,10 +152,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label
-                htmlFor="confirmPassword"
-                className="text-sm font-medium text-gray-700 dark:text-zinc-300"
-              >
+              <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-zinc-300">
                 Confirm New Password
               </Label>
               <Input

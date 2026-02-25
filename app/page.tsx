@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
 
 const features = [
   { icon: "⚡", title: "Instant ATS Score", description: "Get a precise compatibility score in seconds. Understand exactly where you stand before submitting." },
@@ -61,8 +62,8 @@ const pricingPlans = [
 ];
 
 export default async function LandingPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getServerSession(authOptions);
+  const user = session?.user ?? null;
 
   return (
     <div style={{ minHeight: "100vh", color: "#0f172a", fontFamily: "'Instrument Sans', sans-serif" }}>

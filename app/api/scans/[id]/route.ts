@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
@@ -7,34 +8,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const scan = await prisma.scan.findFirst({
+      where: { id, userId: user.id },
+      include: { result: true },
+    });
 
-    const { data: scan, error } = await supabase
-      .from("scans")
-      .select(`
-        id, user_id, resume_url, resume_filename, job_description,
-        job_title, ats_score, status, created_at,
-        scan_results (
-          id, scan_id, keyword_match_score, skills_match_score,
-          experience_score, formatting_score, title_alignment_score,
-          overall_score, keyword_matches, missing_keywords,
-          hard_skills_matched, hard_skills_missing, soft_skills_matched,
-          soft_skills_missing, formatting_issues, suggestions,
-          section_quality, seniority_alignment, recruiter_readability, created_at
-        )
-      `)
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (error || !scan) {
+    if (!scan) {
       return NextResponse.json({ error: "Scan not found" }, { status: 404 });
     }
 

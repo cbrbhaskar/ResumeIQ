@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { toast } from "@/hooks/use-toast";
-import { createClient } from "@/lib/supabase/client";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -14,7 +14,6 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/dashboard";
-  const supabase = useMemo(() => createClient(), []);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -24,12 +23,19 @@ function LoginForm() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-      if (error) throw error;
-      router.push(redirectTo);
-      router.refresh();
-    } catch (error) {
-      toast({ title: "Login failed", description: error instanceof Error ? error.message : "Could not sign in. Please try again.", variant: "destructive" });
+      const result = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+      if (result?.error) {
+        toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
+      } else {
+        router.push(redirectTo);
+        router.refresh();
+      }
+    } catch {
+      toast({ title: "Login failed", description: "Could not sign in. Please try again.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -38,11 +44,9 @@ function LoginForm() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     try {
-      const oauthRedirectTo = `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(redirectTo)}`;
-      const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: oauthRedirectTo } });
-      if (error) throw error;
-    } catch (error) {
-      toast({ title: "Google sign-in failed", description: error instanceof Error ? error.message : "Could not continue with Google.", variant: "destructive" });
+      await signIn("google", { callbackUrl: redirectTo });
+    } catch {
+      toast({ title: "Google sign-in failed", description: "Could not continue with Google.", variant: "destructive" });
       setGoogleLoading(false);
     }
   }

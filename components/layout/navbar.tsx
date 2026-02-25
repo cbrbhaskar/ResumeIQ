@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BarChart2, Menu, X, Zap, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
+import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
 
 interface NavbarProps {
@@ -16,14 +16,12 @@ export function Navbar({ user }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => setMounted(true), []);
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push("/");
+    await signOut({ callbackUrl: "/" });
     router.refresh();
   }
 

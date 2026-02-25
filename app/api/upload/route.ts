@@ -1,19 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { v2 as cloudinary } from "cloudinary";
+import { requireAuth } from "@/lib/auth";
 import { extractTextFromFile } from "@/lib/ats/parser";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+function uploadToCloudinary(buffer: Buffer, publicId: string, contentType: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        public_id: publicId,
+        format: contentType === "application/pdf" ? "pdf" : "docx",
+      },
+      (error, result) => {
+        if (error || !result) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const authClient = await createClient();
-    const supabase = createAdminClient();
-
-    const {
-      data: { user },
-    } = await authClient.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -22,7 +38,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
     const allowedTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -34,7 +49,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB." },
@@ -44,7 +58,6 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Extract text from file
     let resumeText: string;
     try {
       resumeText = await extractTextFromFile(buffer, file.type);
@@ -62,31 +75,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload to Supabase Storage
-    const fileName = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("resumes")
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: false,
-      });
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+    const publicId = `resumes/${user.id}/${Date.now()}-${safeName}`;
 
-    if (uploadError) {
-      console.error("Storage upload error:", uploadError);
+    let resumeUrl: string;
+    try {
+      resumeUrl = await uploadToCloudinary(buffer, publicId, file.type);
+    } catch (err) {
+      console.error("Cloudinary upload error:", err);
       return NextResponse.json(
         { error: "Failed to store file. Please try again." },
         { status: 500 }
       );
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("resumes")
-      .getPublicUrl(uploadData.path);
-
     return NextResponse.json({
       success: true,
       resumeText,
-      resumeUrl: publicUrl,
+      resumeUrl,
       fileName: file.name,
     });
   } catch (error) {

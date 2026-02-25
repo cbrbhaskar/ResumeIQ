@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import prisma from "@/lib/prisma";
 import { getUserUsage } from "@/lib/usage";
 import { formatDate, getScoreLabel, getPlanDisplayName } from "@/lib/utils";
 import { Scan } from "@/lib/types";
@@ -13,18 +15,33 @@ function getScoreColor(score: number): string {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return null;
 
-  const [usage, { data: recentScans }, { data: profile }] = await Promise.all([
-    getUserUsage(user.id),
-    supabase.from("scans").select("id, job_title, ats_score, status, created_at, resume_filename").eq("user_id", user.id).eq("status", "completed").order("created_at", { ascending: false }).limit(5),
-    supabase.from("profiles").select("full_name, plan").eq("id", user.id).single(),
+  const userId = (session.user as { id: string }).id;
+
+  const [usage, recentPrismaScans, profile] = await Promise.all([
+    getUserUsage(userId),
+    prisma.scan.findMany({
+      where: { userId, status: "completed" },
+      select: { id: true, userId: true, jobTitle: true, atsScore: true, status: true, createdAt: true, resumeFilename: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.profile.findUnique({ where: { userId }, select: { fullName: true, plan: true } }),
   ]);
 
-  const scans = (recentScans || []) as Scan[];
-  const firstName = profile?.full_name?.split(" ")[0] || "there";
+  const scans = recentPrismaScans.map((s) => ({
+    id: s.id,
+    user_id: s.userId,
+    job_title: s.jobTitle,
+    ats_score: s.atsScore,
+    status: s.status,
+    created_at: s.createdAt.toISOString(),
+    resume_filename: s.resumeFilename,
+  })) as Scan[];
+
+  const firstName = profile?.fullName?.split(" ")[0] || "there";
   const avgScore = scans.length > 0 ? Math.round(scans.reduce((a, s) => a + (s.ats_score || 0), 0) / scans.length) : null;
   const bestScore = scans.length > 0 ? Math.max(...scans.map((s) => s.ats_score || 0)) : null;
 
