@@ -93,16 +93,16 @@ model ScanResult {
   formattingScore      Int      @default(0)
   titleAlignmentScore  Int      @default(0)
   overallScore         Int      @default(0)
-  keywordMatches       Json     @default("[]")
-  missingKeywords      Json     @default("[]")
-  hardSkillsMatched    Json     @default("[]")
-  hardSkillsMissing    Json     @default("[]")
-  softSkillsMatched    Json     @default("[]")
-  softSkillsMissing    Json     @default("[]")
-  formattingIssues     Json     @default("[]")
-  suggestions          Json     @default("[]")
-  sectionQuality       Json     @default("{}")
-  seniorityAlignment   String   @default("") @db.Text
+  keywordMatches       Json?
+  missingKeywords      Json?
+  hardSkillsMatched    Json?
+  hardSkillsMissing    Json?
+  softSkillsMatched    Json?
+  softSkillsMissing    Json?
+  formattingIssues     Json?
+  suggestions          Json?
+  sectionQuality       Json?
+  seniorityAlignment   String?  @db.Text
   recruiterReadability Int      @default(50)
   createdAt            DateTime @default(now())
   scan                 Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
