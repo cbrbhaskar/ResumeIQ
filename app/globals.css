@@ -140,3 +140,54 @@
   from { height: var(--radix-accordion-content-height); }
   to   { height: 0; }
 }
+
+/* ── Magic UI Utilities ─────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.bento-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(124, 58, 237, 0.08);
+  border-radius: 1.25rem;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.bento-card:hover {
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow: 0 8px 40px rgba(124, 58, 237, 0.10);
+  transform: translateY(-2px);
+}
+
+.shimmer-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.5) 50%,
+    transparent 60%
+  );
+  background-size: 200% auto;
+  animation: shimmer 2.5s linear infinite;
+}
+
+.score-ring {
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
