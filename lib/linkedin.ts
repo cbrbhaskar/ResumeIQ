@@ -64,7 +64,7 @@ function resolveRedirectUri(origin?: string): string {
   if (process.env.LINKEDIN_REDIRECT_URI) return process.env.LINKEDIN_REDIRECT_URI;
   if (origin) return `${origin}/api/linkedin`;
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://resumeops.in";
   return `${baseUrl}/api/linkedin`;
 }
 

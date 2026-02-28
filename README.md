@@ -1,8 +1,8 @@
-# ResumeIQ
+# ResumeOps
 
 AI-powered ATS resume optimizer. Upload your resume, paste a job description, and get a detailed score with keyword gaps, skill analysis, and actionable suggestions — powered by Google Gemini.
 
-**Live:** https://resumeiq.in
+**Live:** https://resumeops.in
 
 ---
 
@@ -204,14 +204,14 @@ npx vercel --prod --force
 
 **Required Vercel environment variables** (Settings → Environment Variables):
 - All variables from `.env.local` above
-- `NEXTAUTH_URL` must be your production URL (e.g. `https://resumeiq.in`)
+- `NEXTAUTH_URL` must be your production URL (e.g. `https://resumeops.in`)
 - `NEXT_PUBLIC_APP_URL` must also be your production URL
 
 ### Google OAuth redirect URI
 
 In Google Cloud Console → OAuth 2.0 client → Authorized redirect URIs, add:
 ```
-https://resumeiq.in/api/auth/callback/google
+https://resumeops.in/api/auth/callback/google
 http://localhost:3000/api/auth/callback/google
 ```
 
@@ -219,7 +219,7 @@ http://localhost:3000/api/auth/callback/google
 
 In Stripe Dashboard → Webhooks → Add endpoint:
 ```
-https://resumeiq.in/api/stripe/webhook
+https://resumeops.in/api/stripe/webhook
 ```
 Events to listen for: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
 

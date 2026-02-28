@@ -1,13 +1,15 @@
-# ResumeIQ — Agent Instructions
+# ResumeOps — Agent Instructions
 
 ## Project
-Next.js 16 SaaS — ATS resume optimizer. Supabase auth/db, Gemini AI analysis, Stripe billing.
+Next.js 16 SaaS — ATS resume optimizer. NextAuth + Prisma/MySQL auth/db, Gemini AI analysis, Stripe billing.
 
 ## Stack
 - **Framework**: Next.js 16 App Router (Turbopack)
-- **Auth & DB**: Supabase (SSR client via `@supabase/ssr`)
-- **AI**: Google Gemini (`@google/generative-ai`)
+- **Auth**: NextAuth v4 — CredentialsProvider + GoogleProvider (`lib/auth-options.ts`)
+- **Database**: MySQL via Prisma v5 (hosted on Railway) — client at `lib/prisma.ts`
+- **AI**: Google Gemini (`@google/genai`)
 - **Payments**: Stripe (checkout, portal, webhooks)
+- **File Storage**: Cloudinary
 - **Styling**: Tailwind CSS + inline styles, Instrument Sans font
 - **UI**: Custom glassmorphism design system (see `app/globals.css`)
 
@@ -31,8 +33,9 @@ Next.js 16 SaaS — ATS resume optimizer. Supabase auth/db, Gemini AI analysis, 
 - Pro: $6.99/mo ($4.99/mo annual) — unlimited scans
 - Teams: $15.99/mo ($13.99/mo annual) — team features
 
-## Supabase
-- Server client: `import { createClient } from "@/lib/supabase/server"`
-- Browser client: `import { createClient } from "@/lib/supabase/client"`
-- Auth callback route: `app/api/auth/callback/route.ts`
-- Email redirect: `${window.location.origin}/api/auth/callback?next=/dashboard`
+## Auth & Database
+- Session helper: `import { requireAuth } from "@/lib/auth"` — returns user or null
+- Prisma client: `import prisma from "@/lib/prisma"`
+- Auth handler: `app/api/auth/[...nextauth]/route.ts`
+- NextAuth config: `lib/auth-options.ts`
+- Domain: `https://resumeops.in`

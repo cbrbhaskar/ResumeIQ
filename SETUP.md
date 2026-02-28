@@ -1,198 +1,161 @@
-# ResumeIQ — Setup Guide
+# ResumeOps — Setup Guide
 
 ## Tech Stack
-- **Next.js 14** (App Router)
-- **Tailwind CSS**
-- **Supabase** (Auth + Database + Storage)
-- **Stripe** (Billing)
-- **Google Gemini AI** (ATS Analysis Engine)
+- **Next.js 16** (App Router, Turbopack)
+- **TypeScript**
+- **NextAuth v4** (CredentialsProvider + GoogleProvider)
+- **MySQL via Prisma v5** (hosted on Railway)
+- **Cloudinary** (file storage)
+- **Stripe** (billing)
+- **Google Gemini AI** (ATS analysis)
+- **Vercel** (deployment)
 
 ---
 
 ## Prerequisites
 - Node.js 18+
-- A Supabase project
-- A Stripe account
+- A Railway account (MySQL database)
+- A Cloudinary account
+- A Google Cloud project (OAuth)
 - A Google AI Studio API key
+- A Stripe account
 
 ---
 
 ## Step 1: Install Dependencies
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 ---
 
 ## Step 2: Configure Environment Variables
 
-Copy `.env.local.example` to `.env.local` and fill in all values:
+Create `.env.local` in the project root:
 
-```bash
-cp .env.local.example .env.local
+```env
+# Database (Railway MySQL)
+DATABASE_URL=mysql://user:password@host:port/dbname
+
+# NextAuth
+NEXTAUTH_SECRET=<generate: openssl rand -base64 32>
+NEXTAUTH_URL=http://localhost:3000
+
+# Google OAuth (https://console.cloud.google.com → APIs & Services → Credentials)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Cloudinary (https://cloudinary.com/console)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Google Gemini AI (https://aistudio.google.com/apikey)
+GEMINI_API_KEY=
+
+# Stripe (https://dashboard.stripe.com)
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Stripe Price IDs (create in Stripe dashboard)
+NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID=price_...
+NEXT_PUBLIC_STRIPE_PRO_YEARLY_PRICE_ID=price_...
+NEXT_PUBLIC_STRIPE_TEAMS_MONTHLY_PRICE_ID=price_...
+NEXT_PUBLIC_STRIPE_TEAMS_YEARLY_PRICE_ID=price_...
+
+# App URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Required variables:
-- `NEXT_PUBLIC_SUPABASE_URL` — from your Supabase project settings
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — from Supabase → Settings → API
-- `SUPABASE_SERVICE_ROLE_KEY` — from Supabase → Settings → API (keep secret!)
-- `GEMINI_API_KEY` — from https://aistudio.google.com/app/apikey
-- `STRIPE_SECRET_KEY` — from Stripe Dashboard → Developers → API Keys
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — from Stripe Dashboard
-- `STRIPE_WEBHOOK_SECRET` — from Stripe Dashboard → Webhooks (after creating endpoint)
+Also create a `.env` file (used by Prisma CLI):
+```env
+DATABASE_URL=mysql://user:password@host:port/dbname
+```
 
 ---
 
-## Step 3: Set Up Supabase Database
+## Step 3: Set Up Database (Railway MySQL)
 
-1. Open your Supabase project → SQL Editor
-2. Copy and run the contents of `supabase/migrations/001_initial.sql`
-3. This creates all tables, RLS policies, storage bucket, and triggers
+1. Create a Railway project → add **MySQL** service
+2. Go to **Connect** tab → copy the **Public URL**
+3. Set `DATABASE_URL` in both `.env` and `.env.local`
+4. Push the Prisma schema:
 
----
-
-## Step 4: Set Up Supabase Storage
-
-The SQL migration creates the `resumes` bucket automatically. If it doesn't:
-1. Supabase Dashboard → Storage
-2. Create bucket named `resumes`
-3. Set to Public
+```bash
+npx prisma db push
+```
 
 ---
 
-## Step 5: Configure Supabase Auth
+## Step 4: Configure Google OAuth
 
-1. Supabase → Authentication → Providers
-2. Enable **Email** (enabled by default)
-3. Enable **Google** OAuth:
-   - Create OAuth app in Google Cloud Console
-   - Add Client ID + Secret to Supabase
-
-4. Supabase → Authentication → URL Configuration:
-   - Site URL: `http://localhost:3000` (dev) or your production URL
-   - Redirect URL: `http://localhost:3000/api/auth/callback`
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → **APIs & Services → Credentials**
+2. Create an **OAuth 2.0 Client ID** (Web application)
+3. Add **Authorized redirect URIs**:
+   - `http://localhost:3000/api/auth/callback/google` (dev)
+   - `https://resumeops.in/api/auth/callback/google` (production)
+4. Copy Client ID and Secret → add to `.env.local`
 
 ---
 
-## Step 6: Create Stripe Products & Prices
+## Step 5: Set Up Stripe Products & Prices
 
 In Stripe Dashboard → Products → Add Product:
 
-1. **Pro Monthly**: $6.99/month → copy Price ID → `STRIPE_PRO_MONTHLY_PRICE_ID`
-2. **Pro Yearly**: $59.88/year ($4.99/month) → copy Price ID → `STRIPE_PRO_YEARLY_PRICE_ID`
-3. **Teams Monthly**: $15.99/month → copy Price ID → `STRIPE_TEAMS_MONTHLY_PRICE_ID`
-4. **Teams Yearly**: $167.88/year ($13.99/month) → copy Price ID → `STRIPE_TEAMS_YEARLY_PRICE_ID`
+1. **ResumeOps Pro - Monthly**: $6.99/month → copy Price ID
+2. **ResumeOps Pro - Yearly**: $59.88/year ($4.99/month) → copy Price ID
+3. **ResumeOps Teams - Monthly**: $15.99/month → copy Price ID
+4. **ResumeOps Teams - Yearly**: $167.88/year ($13.99/month) → copy Price ID
+
+Add all four Price IDs to `.env.local`.
 
 ---
 
-## Step 7: Set Up Stripe Webhook (for subscription management)
+## Step 6: Set Up Stripe Webhook
 
 1. Stripe Dashboard → Developers → Webhooks → Add endpoint
-2. URL: `https://yourdomain.com/api/stripe/webhook`
+2. URL: `https://resumeops.in/api/stripe/webhook`
 3. Select events:
    - `checkout.session.completed`
-   - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
-   - `invoice.payment_succeeded`
-   - `invoice.payment_failed`
 4. Copy Signing Secret → `STRIPE_WEBHOOK_SECRET`
 
-For local testing, use Stripe CLI:
+For local testing:
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
 ---
 
-## Step 8: Set Up Stripe Customer Portal
+## Step 7: Enable Stripe Customer Portal
 
-Stripe Dashboard → Settings → Billing → Customer Portal → Enable it.
+Stripe Dashboard → Settings → Billing → Customer Portal → **Activate**.
 
 ---
 
-## Step 9: Run Locally
+## Step 8: Run Locally
 
 ```bash
 npm run dev
 ```
 
-Visit http://localhost:3000
+Open http://localhost:3000
 
 ---
 
-## Project Structure
-
-```
-app/
-  page.tsx                    # Landing page
-  pricing/                    # Pricing page
-  (auth)/
-    login/                    # Login
-    signup/                   # Sign up
-  (dashboard)/
-    layout.tsx                # Dashboard sidebar layout
-    dashboard/                # Main dashboard
-    upload/                   # Upload + analyze
-    results/[id]/             # Analysis results
-    history/                  # Scan history
-    billing/                  # Subscription management
-    settings/                 # Account settings
-  api/
-    upload/                   # File upload + text extraction
-    analyze/                  # ATS analysis (Gemini AI)
-    scans/                    # Fetch scan data
-    stripe/
-      checkout/               # Create checkout session
-      portal/                 # Open billing portal
-      webhook/                # Handle Stripe events
-    auth/callback/            # OAuth callback
-    usage/                    # Get usage info
-
-lib/
-  ats/analyzer.ts             # Gemini AI analysis engine
-  ats/parser.ts               # PDF/DOCX text extraction
-  supabase/                   # Supabase clients
-  stripe/                     # Stripe client + pricing config
-  types.ts                    # TypeScript types
-  utils.ts                    # Helpers
-  usage.ts                    # Usage tracking
-
-components/
-  ui/                         # Reusable UI components
-  layout/                     # Navbar, Footer, Sidebar
-  upload/                     # File dropzone
-  results/                    # Score gauge, keyword table, etc.
-
-supabase/
-  migrations/001_initial.sql  # Full DB schema
-```
-
----
-
-## Deployment
-
-### Vercel (recommended)
+## Deployment (Vercel)
 
 1. Push to GitHub
-2. Import to Vercel
-3. Add all environment variables
-4. Deploy
-
-### Important for deployment:
-- Update `NEXT_PUBLIC_APP_URL` to your production URL
-- Update Supabase redirect URLs to production URL
-- Switch Stripe to live keys
-- Update Stripe webhook URL to production
-
----
-
-## Free Plan Limits
-
-Free users get **3 total scans**. After that, a paywall appears directing them to `/pricing`.
-
-This is tracked in the `usage_counts` table. The `analyze` API route checks this before running.
+2. Import project to Vercel
+3. Add all environment variables (Settings → Environment Variables)
+   - Set `NEXTAUTH_URL` → `https://resumeops.in`
+   - Set `NEXT_PUBLIC_APP_URL` → `https://resumeops.in`
+   - Use live Stripe keys (`sk_live_`, `pk_live_`)
+4. Add custom domain `resumeops.in` in Vercel → Settings → Domains
+5. Deploy
 
 ---
 
@@ -206,4 +169,4 @@ This is tracked in the `usage_counts` table. The `analyze` API route checks this
 | Formatting Safety | 15% |
 | Title Alignment | 10% |
 
-Powered by Google Gemini 1.5 Flash.
+Powered by Google Gemini 2.5 Flash.
