@@ -63,7 +63,7 @@ function LoginForm() {
     <div style={{ width: "100%", maxWidth: "380px" }}>
       <div style={{ marginBottom: "1.75rem" }}>
         <h1 style={{ fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.02em", color: "#0f172a", marginBottom: "0.3rem" }}>Welcome back</h1>
-        <p style={{ fontSize: "0.875rem", color: "#64748b" }}>Sign in to your ResumeIQ account</p>
+        <p style={{ fontSize: "0.875rem", color: "#64748b" }}>Sign in to your ResumeOps account</p>
       </div>
 
       <button onClick={handleGoogleLogin} disabled={googleLoading} style={{ width: "100%", padding: "0.7rem 1rem", borderRadius: "8px", border: "1px solid #d1d5db", background: "#fff", color: "#374151", fontSize: "0.875rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.625rem", marginBottom: "1rem", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
@@ -117,7 +117,7 @@ function LoginPageContent() {
 
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", position: "relative" }}>
           <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "15px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>ResumeOps</span>
         </Link>
 
         <div style={{ position: "relative" }}>
@@ -155,7 +155,7 @@ function LoginPageContent() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.5rem" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", marginBottom: "2.5rem" }}>
           <div style={{ width: "30px", height: "30px", borderRadius: "7px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "13px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a" }}>ResumeOps</span>
         </Link>
         <Suspense fallback={<div style={{ width: "380px", height: "400px" }} />}>
           <LoginForm />

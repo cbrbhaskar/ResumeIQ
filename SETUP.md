@@ -1,4 +1,4 @@
-# ResumeIQ — Setup Guide
+# ResumeOps — Setup Guide
 
 ## Tech Stack
 - **Next.js 14** (App Router)

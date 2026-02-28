@@ -11,12 +11,12 @@ const instrumentSans = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ResumeIQ — ATS Resume Optimizer",
+  title: "ResumeOps — ATS Resume Optimizer",
   description:
     "See exactly why your resume gets filtered out and how to fix it in minutes. AI-powered ATS score analysis.",
   keywords: ["resume", "ATS", "job application", "resume optimization", "ATS score"],
   openGraph: {
-    title: "ResumeIQ — ATS Resume Optimizer",
+    title: "ResumeOps — ATS Resume Optimizer",
     description: "See exactly why your resume gets filtered out and how to fix it.",
     type: "website",
   },

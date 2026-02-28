@@ -1,4 +1,4 @@
-# Hostinger Deployment (ResumeIQ)
+# Hostinger Deployment (ResumeOps)
 
 Last updated: February 24, 2026
 

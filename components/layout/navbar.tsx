@@ -34,7 +34,7 @@ export function Navbar({ user }: NavbarProps) {
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md group-hover:shadow-violet-200 transition-shadow">
               <BarChart2 className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-gray-900 dark:text-white">ResumeIQ</span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">ResumeOps</span>
           </Link>
 
           {/* Desktop nav */}

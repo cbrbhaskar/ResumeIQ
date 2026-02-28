@@ -82,12 +82,12 @@ export default function SignupPage() {
         <div style={{ position: "absolute", bottom: "-60px", left: "-60px", width: "220px", height: "220px", borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", position: "relative" }}>
           <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "15px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}>ResumeOps</span>
         </Link>
         <div style={{ position: "relative" }}>
           <h2 style={{ fontSize: "1.6rem", fontWeight: 800, lineHeight: 1.25, color: "#fff", marginBottom: "0.875rem", letterSpacing: "-0.02em" }}>Start optimising your resume today</h2>
           <p style={{ color: "rgba(255,255,255,0.75)", lineHeight: 1.65, fontSize: "0.9rem", marginBottom: "1.75rem" }}>
-            Join thousands of job seekers who use ResumeIQ to understand and improve their ATS performance.
+            Join thousands of job seekers who use ResumeOps to understand and improve their ATS performance.
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
             {["3 free scans — no card required", "Full keyword & skills gap analysis", "100% private — your data stays yours"].map((f) => (
@@ -116,7 +116,7 @@ export default function SignupPage() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem 1.5rem" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", marginBottom: "2.5rem" }}>
           <div style={{ width: "30px", height: "30px", borderRadius: "7px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "13px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a" }}>ResumeOps</span>
         </Link>
 
         <div style={{ width: "100%", maxWidth: "380px" }}>

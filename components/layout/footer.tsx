@@ -10,7 +10,7 @@ export function Footer() {
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
               <BarChart2 className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="text-sm font-bold text-gray-900 dark:text-white">ResumeIQ</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-white">ResumeOps</span>
           </Link>
 
           <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-zinc-400">
@@ -23,7 +23,7 @@ export function Footer() {
           </div>
 
           <p className="text-xs text-gray-400 dark:text-zinc-500">
-            © {new Date().getFullYear()} ResumeIQ. All rights reserved.
+            © {new Date().getFullYear()} ResumeOps. All rights reserved.
           </p>
         </div>
       </div>

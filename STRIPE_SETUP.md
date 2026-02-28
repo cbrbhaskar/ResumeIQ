@@ -53,24 +53,24 @@ You need to create pricing IDs for the billing page to work:
 2. Create 4 products:
 
 **Product 1: Pro Monthly**
-- Name: `ResumeIQ Pro - Monthly`
+- Name: `ResumeOps Pro - Monthly`
 - Price: `$6.99/month` (recurring)
 - Billing period: Monthly
 - Copy the **Price ID** (starts with `price_`)
 
 **Product 2: Pro Yearly**
-- Name: `ResumeIQ Pro - Yearly`
+- Name: `ResumeOps Pro - Yearly`
 - Price: `$59.88/year` (recurring)
 - Billing period: Yearly
 - Copy the **Price ID**
 
 **Product 3: Teams Monthly**
-- Name: `ResumeIQ Teams - Monthly`
+- Name: `ResumeOps Teams - Monthly`
 - Price: `$15.99/month` (recurring)
 - Copy the **Price ID**
 
 **Product 4: Teams Yearly**
-- Name: `ResumeIQ Teams - Yearly`
+- Name: `ResumeOps Teams - Yearly`
 - Price: `$167.88/year` (recurring)
 - Copy the **Price ID**
 

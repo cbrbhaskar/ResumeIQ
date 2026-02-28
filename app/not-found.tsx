@@ -9,7 +9,7 @@ export default function NotFound() {
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
           <BarChart2 className="w-4 h-4 text-white" />
         </div>
-        <span className="font-bold text-gray-900">ResumeIQ</span>
+        <span className="font-bold text-gray-900">ResumeOps</span>
       </Link>
 
       <div className="mb-6">

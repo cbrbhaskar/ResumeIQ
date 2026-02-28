@@ -1,4 +1,4 @@
-# ResumeIQ — Agent Instructions
+# ResumeOps — Agent Instructions
 
 ## Project
 Next.js 16 SaaS — ATS resume optimizer. Supabase auth/db, Gemini AI analysis, Stripe billing.

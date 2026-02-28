@@ -38,7 +38,7 @@ export function DashboardSidebar({ userEmail }: DashboardSidebarProps) {
       <div style={{ height: "64px", display: "flex", alignItems: "center", padding: "0 1.25rem", borderBottom: "1px solid #e2e8f0" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none" }}>
           <div style={{ width: "30px", height: "30px", borderRadius: "7px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "13px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", letterSpacing: "-0.01em" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", letterSpacing: "-0.01em" }}>ResumeOps</span>
         </Link>
       </div>
 

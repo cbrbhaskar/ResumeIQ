@@ -12,11 +12,11 @@ const features = [
 ];
 
 const testimonials = [
-  { name: "Sarah Chen", role: "Software Engineer", company: "Now at Google", text: "I had applied to 40 roles with no response. ResumeIQ showed me I was missing 14 keywords the JD required. Fixed them in an hour — six interviews the next week.", initials: "SC" },
+  { name: "Sarah Chen", role: "Software Engineer", company: "Now at Google", text: "I had applied to 40 roles with no response. ResumeOps showed me I was missing 14 keywords the JD required. Fixed them in an hour — six interviews the next week.", initials: "SC" },
   { name: "Marcus Williams", role: "Product Manager", company: "Now at Stripe", text: "The keyword gap report completely changed how I write tailored applications. I went from ghosted to three offers in six weeks.", initials: "MW" },
   { name: "Priya Patel", role: "Data Scientist", company: "Now at Meta", text: "What I appreciated most was the section-level feedback. It told me exactly which bullet points to rewrite, not just that something was 'wrong'.", initials: "PP" },
   { name: "James O'Brien", role: "UX Designer", company: "Now at Figma", text: "My ATS score went from 41 to 89 in a single session. The prioritised action list made it clear where to spend my time first.", initials: "JO" },
-  { name: "Aisha Johnson", role: "Marketing Director", company: "Now at HubSpot", text: "Three months of silence, then two weeks after fixing what ResumeIQ flagged — three offers. The format checker caught things I would never have noticed.", initials: "AJ" },
+  { name: "Aisha Johnson", role: "Marketing Director", company: "Now at HubSpot", text: "Three months of silence, then two weeks after fixing what ResumeOps flagged — three offers. The format checker caught things I would never have noticed.", initials: "AJ" },
   { name: "David Park", role: "DevOps Engineer", company: "Now at AWS", text: "Straightforward, detailed, honest. The report doesn't sugarcoat — it tells you exactly what's working and what's costing you interviews.", initials: "DP" },
 ];
 
@@ -71,7 +71,7 @@ export default async function LandingPage() {
       <nav className="glass-panel" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, height: "64px", display: "flex", alignItems: "center", padding: "0 2rem", justifyContent: "space-between", borderRadius: 0, borderTop: "none", borderLeft: "none", borderRight: "none" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "15px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#0f172a", letterSpacing: "-0.01em" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#0f172a", letterSpacing: "-0.01em" }}>ResumeOps</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           {user ? (
@@ -101,7 +101,7 @@ export default async function LandingPage() {
           </h1>
 
           <p style={{ fontSize: "1.1rem", color: "#64748b", maxWidth: "580px", lineHeight: 1.7, margin: "0 auto 2rem" }}>
-            75% of applications are eliminated by Applicant Tracking Systems before a recruiter ever opens them. ResumeIQ shows you exactly why — and how to fix it.
+            75% of applications are eliminated by Applicant Tracking Systems before a recruiter ever opens them. ResumeOps shows you exactly why — and how to fix it.
           </p>
 
           <div style={{ display: "flex", gap: "0.875rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -206,7 +206,7 @@ export default async function LandingPage() {
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem" }}>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
             <h2 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.625rem" }}>Results that speak for themselves</h2>
-            <p style={{ color: "#64748b", fontSize: "1rem" }}>Job seekers who used ResumeIQ to land their next role</p>
+            <p style={{ color: "#64748b", fontSize: "1rem" }}>Job seekers who used ResumeOps to land their next role</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem" }}>
             {testimonials.map((t) => (
@@ -303,14 +303,14 @@ export default async function LandingPage() {
       <footer style={{ borderTop: "1px solid rgba(255,255,255,0.6)", padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", maxWidth: "1100px", margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "12px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>ResumeIQ</span>
+          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>ResumeOps</span>
         </div>
         <div style={{ display: "flex", gap: "1.5rem" }}>
           {["Privacy", "Terms", "Contact"].map((item) => (
             <span key={item} style={{ fontSize: "0.8rem", color: "#94a3b8", cursor: "pointer" }}>{item}</span>
           ))}
         </div>
-        <div style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>© 2025 ResumeIQ</div>
+        <div style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>© 2025 ResumeOps</div>
       </footer>
     </div>
   );
