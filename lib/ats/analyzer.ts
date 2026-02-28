@@ -1,16 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
 import {
   ATSAnalysisResult,
   FormattingIssue,
   Suggestion,
   SectionQuality,
 } from "../types";
-
-let _genAI: GoogleGenAI | null = null;
-function getGenAI() {
-  if (!_genAI) _genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-  return _genAI;
-}
 
 // Mock ATS analysis result for fallback when Gemini API fails
 const MOCK_ANALYSIS_RESULT: ATSAnalysisResult = {
@@ -174,7 +167,10 @@ export async function analyzeResume(
     const prompt = ANALYSIS_PROMPT.replace("{RESUME_TEXT}", resumeText.slice(0, 8000))
       .replace("{JOB_DESCRIPTION}", jobDescription.slice(0, 4000));
 
-    const result = await getGenAI().models.generateContent({
+    const { GoogleGenAI } = await import("@google/genai");
+    const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+
+    const result = await genAI.models.generateContent({
       model: "gemini-2.5-flash",
       contents: prompt,
       config: {

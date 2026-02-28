@@ -1,68 +1,45 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Link from "next/link";
-import { CheckCircle2, CreditCard, Zap, ExternalLink, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { PRICING_PLANS } from "@/lib/stripe/config";
-import { UsageInfo } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { toast } from "@/hooks/use-toast";
+import { CreditCard, Zap, ExternalLink, CheckCircle2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
+import { getPlanDisplayName } from "@/lib/utils";
+import { UsageInfo } from "@/lib/types";
+import { PricingSection } from "@/components/ui/pricing-section";
 
 function BillingContent() {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
-  const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
+    if (success) toast({ title: "Subscription activated!", description: "Welcome to Pro. Enjoy unlimited scans." });
+    if (canceled) toast({ title: "Checkout canceled", description: "Your subscription was not changed." });
 
-    if (success) {
-      toast({
-        title: "Subscription activated!",
-        description: "Welcome to Pro. Enjoy unlimited scans.",
-      });
-    }
-    if (canceled) {
-      toast({
-        title: "Checkout canceled",
-        description: "Your subscription was not changed.",
-      });
-    }
-
-    async function fetchUsage() {
-      const res = await fetch("/api/usage");
-      if (res.ok) {
-        const data = await res.json();
-        setUsage(data.usage);
-      }
-    }
-    fetchUsage();
+    fetch("/api/usage")
+      .then((r) => r.json())
+      .then((d) => setUsage(d.usage));
   }, [searchParams]);
 
   async function handleUpgrade(priceId: string, planId: string) {
-    setLoading(planId);
+    setLoadingPlan(planId);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, billingInterval: billing }),
+        body: JSON.stringify({ priceId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       window.location.href = data.url;
     } catch (err) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Something went wrong",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Something went wrong", variant: "destructive" });
     } finally {
-      setLoading(null);
+      setLoadingPlan(null);
     }
   }
 
@@ -74,198 +51,117 @@ function BillingContent() {
       if (!res.ok) throw new Error(data.error);
       window.location.href = data.url;
     } catch (err) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Something went wrong",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: err instanceof Error ? err.message : "Something went wrong", variant: "destructive" });
     } finally {
       setPortalLoading(false);
     }
   }
 
-  const isOnPaidPlan = usage?.plan !== "free" && usage?.plan !== undefined;
+  const isOnPaidPlan = usage?.plan && usage.plan !== "free";
+  const card: React.CSSProperties = {
+    background: "rgba(255,255,255,0.65)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    border: "1px solid rgba(255,255,255,0.8)",
+    borderRadius: "14px",
+    boxShadow: "0 8px 32px rgba(124,58,237,0.07), 0 2px 8px rgba(0,0,0,0.05)",
+  };
 
   return (
-    <div className="space-y-7 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Billing</h1>
-        <p className="text-gray-400 dark:text-zinc-500 text-sm mt-1">
-          Manage your subscription and billing details
-        </p>
+    <div style={{ color: "#0f172a", fontFamily: "'Instrument Sans', sans-serif" }}>
+      {/* Page header */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h1 style={{ fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.25rem" }}>Billing</h1>
+        <p style={{ fontSize: "0.875rem", color: "#64748b" }}>Manage your subscription and billing details</p>
       </div>
 
-      {/* Current plan */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden">
-        <div className="px-6 pt-5 pb-4 border-b border-gray-50 dark:border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center">
-              <CreditCard className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
-            </div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Current Plan</h2>
+      {/* Current plan card */}
+      <div style={{ ...card, marginBottom: "2rem" }}>
+        <div style={{ padding: "1rem 1.375rem", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: "0.625rem" }}>
+          <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <CreditCard style={{ width: "14px", height: "14px", color: "#7c3aed" }} />
           </div>
+          <span style={{ fontSize: "0.875rem", fontWeight: 700, color: "#0f172a" }}>Current Plan</span>
         </div>
-        <div className="p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white capitalize">
-                  {usage?.plan?.replace(/_/g, " ") || "Free"} Plan
-                </p>
-                {usage?.plan === "free" && (
-                  <p className="text-sm text-gray-400 dark:text-zinc-500">
-                    {usage.scans_limit - usage.scans_used} of {usage.scans_limit} scans remaining
-                  </p>
-                )}
-                {isOnPaidPlan && (
-                  <p className="text-sm text-gray-400 dark:text-zinc-500">Unlimited scans</p>
-                )}
-              </div>
-            </div>
-            {isOnPaidPlan && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleManageBilling}
-                loading={portalLoading}
-              >
-                <ExternalLink className="w-4 h-4" />
-                Manage Billing
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Upgrade section */}
-      {!isOnPaidPlan && (
-        <>
-          <div className="flex items-center justify-between">
+        <div style={{ padding: "1.375rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
+            <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: isOnPaidPlan ? "linear-gradient(135deg, #7c3aed, #4f46e5)" : "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Zap style={{ width: "18px", height: "18px", color: isOnPaidPlan ? "#fff" : "#7c3aed" }} />
+            </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Upgrade your plan</h2>
-              <p className="text-sm text-gray-400 dark:text-zinc-500 mt-0.5">
-                Get unlimited scans and advanced features
+              <p style={{ fontWeight: 700, fontSize: "1rem", color: "#0f172a", marginBottom: "0.125rem" }}>
+                {usage ? getPlanDisplayName(usage.plan) : "—"} Plan
               </p>
-            </div>
-
-            {/* Billing toggle */}
-            <div className="inline-flex items-center gap-0.5 p-1 rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700">
-              <button
-                onClick={() => setBilling("monthly")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                  billing === "monthly"
-                    ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
-                )}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBilling("yearly")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5",
-                  billing === "yearly"
-                    ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
-                )}
-              >
-                Yearly
-                <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full font-semibold">
-                  -28%
-                </span>
-              </button>
+              {usage?.plan === "free" ? (
+                <p style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                  {usage.scans_limit - usage.scans_used} of {usage.scans_limit} scans remaining
+                </p>
+              ) : (
+                <p style={{ fontSize: "0.8rem", color: "#64748b" }}>Unlimited scans · active</p>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {PRICING_PLANS.filter((p) => p.id !== "free").map((plan) => {
-              const price =
-                billing === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
-              const priceId =
-                billing === "monthly"
-                  ? plan.stripePriceIdMonthly
-                  : plan.stripePriceIdYearly;
+          {isOnPaidPlan && (
+            <button
+              onClick={handleManageBilling}
+              disabled={portalLoading}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.425rem", padding: "0.55rem 1rem", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#fff", color: "#374151", fontSize: "0.825rem", fontWeight: 600, cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+            >
+              <ExternalLink style={{ width: "13px", height: "13px" }} />
+              {portalLoading ? "Loading…" : "Manage Billing"}
+            </button>
+          )}
+        </div>
 
-              return (
-                <div
-                  key={plan.id}
-                  className={cn(
-                    "relative bg-white dark:bg-zinc-900 rounded-2xl border shadow-sm overflow-hidden",
-                    plan.popular
-                      ? "border-violet-200 dark:border-violet-800/50 shadow-violet-100/50 dark:shadow-violet-950/30"
-                      : "border-gray-100 dark:border-zinc-800"
-                  )}
-                >
-                  {plan.popular && (
-                    <div className="gradient-brand px-4 py-1.5 flex items-center gap-1.5">
-                      <Sparkles className="w-3 h-3 text-white" />
-                      <span className="text-xs font-semibold text-white">Most Popular</span>
-                    </div>
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">{plan.name}</h3>
-                    <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5 mb-4">{plan.description}</p>
-                    <div className="flex items-end gap-1 mb-5">
-                      <span className="text-3xl font-extrabold text-gray-900 dark:text-white">${price}</span>
-                      <span className="text-gray-400 dark:text-zinc-500 text-sm mb-1">/month</span>
-                    </div>
-                    {billing === "yearly" && (
-                      <p className="text-xs text-gray-400 dark:text-zinc-500 -mt-4 mb-4">Billed annually</p>
-                    )}
-                    <Button
-                      className="w-full mb-5"
-                      variant={plan.popular ? "default" : "outline"}
-                      loading={loading === plan.id}
-                      onClick={() => handleUpgrade(priceId, plan.id)}
-                    >
-                      Upgrade to {plan.name}
-                    </Button>
-                    <ul className="space-y-2">
-                      {plan.features.slice(0, 4).map((f) => (
-                        <li
-                          key={f}
-                          className="flex items-center gap-2 text-xs text-gray-600 dark:text-zinc-400"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Free usage bar */}
+        {usage?.plan === "free" && (
+          <div style={{ padding: "0 1.375rem 1.375rem" }}>
+            <div style={{ height: "5px", borderRadius: "3px", background: "#f1f5f9", overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: "3px", width: `${(usage.scans_used / usage.scans_limit) * 100}%`, background: usage.scans_used >= usage.scans_limit ? "#ef4444" : "linear-gradient(90deg, #7c3aed, #4f46e5)", transition: "width 0.4s" }} />
+            </div>
+            <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.375rem" }}>
+              {usage.scans_used} / {usage.scans_limit} scans used
+            </p>
           </div>
-        </>
-      )}
+        )}
+      </div>
 
       {/* Already on paid plan */}
       {isOnPaidPlan && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 p-6">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold text-emerald-900 dark:text-emerald-300">You&apos;re on a paid plan</p>
-              <p className="text-sm text-emerald-700 dark:text-emerald-400/80 mt-1">
-                You have unlimited resume scans. Use the billing portal to manage, upgrade,
-                downgrade, or cancel your subscription.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 border-emerald-200 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300"
-                onClick={handleManageBilling}
-                loading={portalLoading}
-              >
-                <ExternalLink className="w-4 h-4" />
-                Open Billing Portal
-              </Button>
-            </div>
+        <div style={{ ...card, padding: "1.375rem", display: "flex", alignItems: "flex-start", gap: "0.875rem", background: "rgba(240,253,244,0.8)", border: "1px solid rgba(187,247,208,0.8)" }}>
+          <CheckCircle2 style={{ width: "18px", height: "18px", color: "#16a34a", flexShrink: 0, marginTop: "1px" }} />
+          <div>
+            <p style={{ fontWeight: 700, fontSize: "0.95rem", color: "#15803d", marginBottom: "0.25rem" }}>You&apos;re on a paid plan</p>
+            <p style={{ fontSize: "0.825rem", color: "#166534", lineHeight: 1.55, marginBottom: "0.875rem" }}>
+              You have unlimited resume scans. Use the billing portal to manage, upgrade, downgrade, or cancel your subscription.
+            </p>
+            <button
+              onClick={handleManageBilling}
+              disabled={portalLoading}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.425rem", padding: "0.55rem 1rem", borderRadius: "8px", border: "1px solid rgba(187,247,208,0.9)", background: "#fff", color: "#15803d", fontSize: "0.825rem", fontWeight: 600, cursor: "pointer" }}
+            >
+              <ExternalLink style={{ width: "13px", height: "13px" }} />
+              {portalLoading ? "Loading…" : "Open Billing Portal"}
+            </button>
           </div>
+        </div>
+      )}
+
+      {/* Upgrade section */}
+      {!isOnPaidPlan && (
+        <div>
+          <div style={{ marginBottom: "2rem" }}>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.25rem" }}>Upgrade your plan</h2>
+            <p style={{ fontSize: "0.875rem", color: "#64748b" }}>Unlock unlimited scans and the full AI analysis report</p>
+          </div>
+          <PricingSection
+            mode="billing"
+            onUpgrade={handleUpgrade}
+            loadingPlan={loadingPlan}
+            currentPlan={usage?.plan}
+          />
         </div>
       )}
     </div>
@@ -274,15 +170,13 @@ function BillingContent() {
 
 export default function BillingPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="space-y-4 animate-pulse">
-          <div className="h-8 bg-gray-100 dark:bg-zinc-800 rounded-xl w-32" />
-          <div className="h-32 bg-gray-100 dark:bg-zinc-800 rounded-2xl" />
-          <div className="h-64 bg-gray-100 dark:bg-zinc-800 rounded-2xl" />
-        </div>
-      }
-    >
+    <Suspense fallback={
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {[80, 160, 360].map((h) => (
+          <div key={h} style={{ height: `${h}px`, borderRadius: "14px", background: "rgba(255,255,255,0.5)" }} />
+        ))}
+      </div>
+    }>
       <BillingContent />
     </Suspense>
   );

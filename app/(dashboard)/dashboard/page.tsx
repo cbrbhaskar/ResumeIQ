@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { getUserUsage } from "@/lib/usage";
 import { formatDate, getScoreLabel, getPlanDisplayName } from "@/lib/utils";
 import { Scan } from "@/lib/types";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export default async function DashboardPage() {
   const avgScore = scans.length > 0 ? Math.round(scans.reduce((a, s) => a + (s.ats_score || 0), 0) / scans.length) : null;
   const bestScore = scans.length > 0 ? Math.max(...scans.map((s) => s.ats_score || 0)) : null;
 
-  const card = { background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.8)", borderRadius: "14px", padding: "1.375rem", boxShadow: "0 8px 32px rgba(124,58,237,0.07), 0 2px 8px rgba(0,0,0,0.05)" } as React.CSSProperties;
+  const card = { position: "relative", background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.8)", borderRadius: "14px", padding: "1.375rem", boxShadow: "0 8px 32px rgba(124,58,237,0.07), 0 2px 8px rgba(0,0,0,0.05)" } as React.CSSProperties;
 
   return (
     <div style={{ color: "#0f172a", fontFamily: "'Instrument Sans', sans-serif" }}>
@@ -63,6 +64,7 @@ export default async function DashboardPage() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
         <div style={card}>
+          <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
             <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>📊</div>
             <span style={{ fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.575rem", borderRadius: "100px", background: usage.plan === "free" ? "#f1f5f9" : "#f5f3ff", border: usage.plan === "free" ? "1px solid #e2e8f0" : "1px solid #ede9fe", color: usage.plan === "free" ? "#64748b" : "#7c3aed", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
@@ -84,12 +86,14 @@ export default async function DashboardPage() {
         </div>
 
         <div style={card}>
+          <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
           <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", marginBottom: "0.875rem" }}>📄</div>
           <p style={{ fontSize: "1.9rem", fontWeight: 800, color: "#0f172a", marginBottom: "0.2rem", lineHeight: 1 }}>{scans.length}</p>
           <p style={{ fontSize: "0.775rem", color: "#64748b" }}>Total scans</p>
         </div>
 
         <div style={card}>
+          <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
           <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", marginBottom: "0.875rem" }}>📈</div>
           <p style={{ fontSize: "1.9rem", fontWeight: 800, marginBottom: "0.2rem", lineHeight: 1, color: avgScore ? getScoreColor(avgScore) : "#e2e8f0" }}>
             {avgScore ?? "—"}

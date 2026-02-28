@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
+import { PricingSection } from "@/components/ui/pricing-section";
 
 const features = [
   { icon: "⚡", title: "Instant ATS Score", description: "Get a precise compatibility score in seconds. Understand exactly where you stand before submitting." },
@@ -22,44 +23,6 @@ const testimonials = [
 
 const companies = ["Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix", "Stripe", "Figma", "Shopify", "Airbnb", "Uber", "LinkedIn"];
 
-const pricingPlans = [
-  {
-    name: "Free",
-    monthlyPrice: "$0",
-    annualPrice: "$0",
-    period: "/mo",
-    description: "Evaluate the tool at no cost",
-    features: ["3 resume scans total", "ATS match score", "Basic keyword analysis", "Formatting check"],
-    cta: "Get Started Free",
-    href: "/signup",
-    highlight: false,
-    badge: null,
-  },
-  {
-    name: "Pro",
-    monthlyPrice: "$6.99",
-    annualPrice: "$4.99",
-    period: "/mo",
-    description: "Everything you need to land your next job",
-    features: ["Unlimited resume scans", "Full analysis report", "Keyword & skills breakdown", "Format compliance check", "Prioritised rewrites", "Score improvement tracking", "Full scan history", "Priority support"],
-    cta: "Start Pro",
-    href: "/signup",
-    highlight: true,
-    badge: "Most Popular",
-  },
-  {
-    name: "Teams",
-    monthlyPrice: "$15.99",
-    annualPrice: "$13.99",
-    period: "/mo",
-    description: "For teams and organisations",
-    features: ["Everything in Pro", "Multiple team members", "Shared dashboard", "Shared scan history", "Team analytics", "Admin controls", "Dedicated support"],
-    cta: "Start Teams",
-    href: "/signup",
-    highlight: false,
-    badge: null,
-  },
-];
 
 export default async function LandingPage() {
   const session = await getServerSession(authOptions);
@@ -237,50 +200,7 @@ export default async function LandingPage() {
             <h2 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.625rem" }}>Straightforward pricing</h2>
             <p style={{ color: "#64748b", fontSize: "1rem" }}>Start free. No card required.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", alignItems: "start" }}>
-            {pricingPlans.map((plan) => (
-              <div key={plan.name} className="glass-card" style={{
-                padding: "1.875rem",
-                position: "relative",
-                ...(plan.highlight ? {
-                  background: "rgba(124,58,237,0.06)",
-                  border: "1.5px solid rgba(124,58,237,0.25)",
-                  boxShadow: "0 8px 32px rgba(124,58,237,0.12), 0 2px 8px rgba(0,0,0,0.06)"
-                } : {})
-              }}>
-                {plan.badge && (
-                  <div style={{ position: "absolute", top: "-13px", left: "50%", transform: "translateX(-50%)", padding: "0.22rem 0.9rem", borderRadius: "100px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff", fontSize: "0.7rem", fontWeight: 700, whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(124,58,237,0.35)" }}>
-                    {plan.badge}
-                  </div>
-                )}
-                <div style={{ marginBottom: "1.375rem" }}>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "0.5rem" }}>{plan.name}</div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.2rem", marginBottom: "0.125rem" }}>
-                    <span style={{ fontSize: "2.25rem", fontWeight: 800, color: "#0f172a" }}>{plan.monthlyPrice}</span>
-                    {plan.monthlyPrice !== "$0" && <span style={{ color: "#94a3b8", fontSize: "0.875rem" }}>{plan.period}</span>}
-                  </div>
-                  {plan.monthlyPrice !== "$0" && (
-                    <div style={{ fontSize: "0.78rem", color: "#7c3aed", fontWeight: 500 }}>{plan.annualPrice}/mo billed annually</div>
-                  )}
-                  <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "0.375rem" }}>{plan.description}</div>
-                </div>
-                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                  {plan.features.map((f) => (
-                    <li key={f} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "#374151" }}>
-                      <span style={{ color: "#7c3aed", fontWeight: 700, fontSize: "0.8rem", flexShrink: 0 }}>✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href={plan.href}
-                  className={plan.highlight ? "btn-glow" : "btn-outline-gradient"}
-                  style={{ display: "block", textAlign: "center", padding: "0.7rem 1.25rem", borderRadius: "9px", fontWeight: 600, fontSize: "0.875rem", textDecoration: "none" }}
-                >
-                  {plan.cta}
-                </Link>
-              </div>
-            ))}
-          </div>
+          <PricingSection mode="landing" />
         </div>
       </section>
 

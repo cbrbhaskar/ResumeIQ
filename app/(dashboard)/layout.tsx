@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       <DashboardSidebar userEmail={session.user.email || undefined} />
       <main style={{ flex: 1, overflowY: "auto" }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem 1.5rem" }}>
