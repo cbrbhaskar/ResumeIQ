@@ -1,237 +1,370 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { ArrowRight, CheckCircle2, Star, Zap, Target, FileText, Download, Shield, TrendingUp } from "lucide-react";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { MagicOrbs } from "@/components/ui/magic-orbs";
+import { MarqueeRow } from "@/components/ui/marquee-row";
+import { BentoGrid, BentoCard } from "@/components/ui/bento-grid";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { PricingSection } from "@/components/ui/pricing-section";
+import Navbar from "@/components/layout/navbar";
+import Footer from "@/components/layout/footer";
 
-const features = [
-  { icon: "⚡", title: "Instant ATS Score", description: "Get a precise compatibility score in seconds. Understand exactly where you stand before submitting." },
-  { icon: "🎯", title: "Keyword Gap Analysis", description: "Surface every keyword the job requires that your resume is missing — with context on why each one matters." },
-  { icon: "🔍", title: "Section-by-Section Review", description: "Pinpoint the specific sections and sentences holding your score down, not just a vague overall rating." },
-  { icon: "✍️", title: "Tailored Suggestions", description: "Receive concrete rewrites tied to your actual resume content — actionable, not generic advice." },
-  { icon: "📋", title: "Format Compliance Check", description: "Identify structural issues that cause ATS parsers to misread or discard your resume before scoring." },
-  { icon: "📤", title: "Export & Share", description: "Download your full report as PDF or DOCX to guide revisions or share with a mentor or coach." },
+const COMPANY_LOGOS = [
+  "Google", "Meta", "Stripe", "Amazon", "Airbnb",
+  "Notion", "Linear", "Figma", "Shopify", "Netflix", "Apple", "Microsoft",
 ];
 
-const testimonials = [
-  { name: "Sarah Chen", role: "Software Engineer", company: "Now at Google", text: "I had applied to 40 roles with no response. ResumeIQ showed me I was missing 14 keywords the JD required. Fixed them in an hour — six interviews the next week.", initials: "SC" },
-  { name: "Marcus Williams", role: "Product Manager", company: "Now at Stripe", text: "The keyword gap report completely changed how I write tailored applications. I went from ghosted to three offers in six weeks.", initials: "MW" },
-  { name: "Priya Patel", role: "Data Scientist", company: "Now at Meta", text: "What I appreciated most was the section-level feedback. It told me exactly which bullet points to rewrite, not just that something was 'wrong'.", initials: "PP" },
-  { name: "James O'Brien", role: "UX Designer", company: "Now at Figma", text: "My ATS score went from 41 to 89 in a single session. The prioritised action list made it clear where to spend my time first.", initials: "JO" },
-  { name: "Aisha Johnson", role: "Marketing Director", company: "Now at HubSpot", text: "Three months of silence, then two weeks after fixing what ResumeIQ flagged — three offers. The format checker caught things I would never have noticed.", initials: "AJ" },
-  { name: "David Park", role: "DevOps Engineer", company: "Now at AWS", text: "Straightforward, detailed, honest. The report doesn't sugarcoat — it tells you exactly what's working and what's costing you interviews.", initials: "DP" },
+const TESTIMONIALS = [
+  { name: "Sarah K.", role: "Software Engineer", company: "Google", quote: "ResumeOps showed me I was missing 14 keywords. Fixed it and landed 3 interviews in one week.", stars: 5 },
+  { name: "Marcus T.", role: "Product Manager", company: "Meta", quote: "My score went from 42 to 87 after following the suggestions. The specificity of the feedback is unmatched.", stars: 5 },
+  { name: "Priya M.", role: "Data Scientist", company: "Stripe", quote: "Three months of silence. Two weeks after fixing what ResumeOps flagged — I had two offers.", stars: 5 },
+  { name: "James L.", role: "UX Designer", company: "Airbnb", quote: "The keyword gap analysis alone is worth it. I genuinely had no idea how ATS systems worked.", stars: 5 },
+  { name: "Aisha B.", role: "Marketing Lead", company: "Notion", quote: "Went from 0 callbacks to 5 interviews in 3 weeks. The formatting feedback was eye-opening.", stars: 5 },
+  { name: "Chen W.", role: "Backend Engineer", company: "Linear", quote: "Caught formatting issues that were silently killing my chances. Now at Linear!", stars: 5 },
+  { name: "Elena R.", role: "Finance Analyst", company: "Amazon", quote: "The suggestions rewrote my bullet points in a way that sounds like me — but sharper.", stars: 5 },
+  { name: "David O.", role: "DevOps Engineer", company: "Netflix", quote: "Score jumped 35 points in one session. Landed my dream role within a month.", stars: 5 },
+  { name: "Fatima H.", role: "ML Engineer", company: "Apple", quote: "Every suggestion was actionable and specific to the job I was applying for. Love it.", stars: 5 },
+  { name: "Ryan M.", role: "Full Stack Dev", company: "Shopify", quote: "The ATS score correlation with interview callbacks is very real. Don't skip this step.", stars: 5 },
+  { name: "Nina P.", role: "Sales Manager", company: "Figma", quote: "Extremely detailed feedback. I understood exactly what to change and why.", stars: 5 },
+  { name: "Alex T.", role: "Cloud Architect", company: "Microsoft", quote: "Best investment in my job search. Saved me weeks of guessing what was wrong.", stars: 5 },
 ];
 
-const companies = ["Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix", "Stripe", "Figma", "Shopify", "Airbnb", "Uber", "LinkedIn"];
+function TestimonialCard({ name, role, company, quote, stars }: {
+  name: string; role: string; company: string; quote: string; stars: number;
+}) {
+  const initials = name.split(" ").map((n) => n[0]).join("");
+  return (
+    <div className="flex-shrink-0 w-[300px] glass-card rounded-2xl p-5 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
+            {initials}
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900 text-sm leading-tight">{name}</p>
+            <p className="text-xs text-slate-500">{role}</p>
+          </div>
+        </div>
+        <span className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap shrink-0">
+          Now at {company}
+        </span>
+      </div>
+      <div className="flex gap-0.5">
+        {Array.from({ length: stars }).map((_, i) => (
+          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+        ))}
+      </div>
+      <p className="text-slate-600 text-xs leading-relaxed">&quot;{quote}&quot;</p>
+    </div>
+  );
+}
 
-
-export default async function LandingPage() {
-  const session = await getServerSession(authOptions);
-  const user = session?.user ?? null;
+export default function LandingPage() {
+  const mid = Math.ceil(TESTIMONIALS.length / 2);
+  const row1 = TESTIMONIALS.slice(0, mid);
+  const row2 = TESTIMONIALS.slice(mid);
 
   return (
-    <div style={{ minHeight: "100vh", color: "#0f172a", fontFamily: "'Instrument Sans', sans-serif" }}>
-      {/* Nav */}
-      <nav className="glass-panel" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, height: "64px", display: "flex", alignItems: "center", padding: "0 2rem", justifyContent: "space-between", borderRadius: 0, borderTop: "none", borderLeft: "none", borderRight: "none" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "15px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "1.05rem", color: "#0f172a", letterSpacing: "-0.01em" }}>ResumeIQ</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          {user ? (
-            <Link href="/dashboard" className="btn-glow" style={{ padding: "0.5rem 1.125rem", borderRadius: "8px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Dashboard →</Link>
-          ) : (
-            <>
-              <Link href="/login" className="btn-outline-gradient" style={{ padding: "0.5rem 1.125rem", borderRadius: "8px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 500 }}>Sign In</Link>
-              <Link href="/signup" className="btn-glow" style={{ padding: "0.5rem 1.125rem", borderRadius: "8px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Get Started Free</Link>
-            </>
-          )}
-        </div>
-      </nav>
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      <Navbar />
 
-      {/* Hero */}
-      <section style={{ paddingTop: "120px", paddingBottom: "80px", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem", position: "relative" }}>
+      {/* ── HERO ──────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20 pb-24 overflow-hidden">
+        <MagicOrbs />
+        <div className="dot-grid absolute inset-0 opacity-[0.35]" />
 
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.35rem 0.875rem", borderRadius: "100px", border: "1px solid rgba(124,58,237,0.2)", background: "rgba(245,243,255,0.8)", fontSize: "0.8rem", color: "#7c3aed", fontWeight: 600, marginBottom: "1.75rem", backdropFilter: "blur(8px)" }}>
-            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#7c3aed", display: "inline-block" }} />
-            ATS Optimisation for Serious Job Seekers
+        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
+          {/* Trust badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-50 border border-violet-200/80 text-violet-700 text-sm font-medium mb-8 shadow-sm">
+            <Zap className="w-3.5 h-3.5" />
+            Trusted by 10,000+ job seekers worldwide
           </div>
 
-          <h1 style={{ fontSize: "clamp(2.25rem, 5.5vw, 4rem)", fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: "1.25rem", maxWidth: "820px", margin: "0 auto 1.25rem" }}>
-            Your resume is screened by software{" "}
-            <span className="gradient-text">before any human reads it</span>
+          {/* Headline — fear to empowerment */}
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-slate-900 leading-[1.05] tracking-tight mb-6">
+            75% of resumes never reach{" "}
+            <span className="gradient-text">a human reviewer.</span>
           </h1>
-
-          <p style={{ fontSize: "1.1rem", color: "#64748b", maxWidth: "580px", lineHeight: 1.7, margin: "0 auto 2rem" }}>
-            75% of applications are eliminated by Applicant Tracking Systems before a recruiter ever opens them. ResumeIQ shows you exactly why — and how to fix it.
+          <p className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+            ResumeOps analyses your resume against the job description and shows you exactly what&apos;s holding you back — with specific fixes ready in seconds.
           </p>
 
-          <div style={{ display: "flex", gap: "0.875rem", justifyContent: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
-            <Link href={user ? "/upload" : "/signup"} className="btn-glow" style={{ padding: "0.8rem 1.75rem", borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "0.95rem" }}>
-              Analyse My Resume Free →
-            </Link>
-            {!user && (
-              <Link href="/login" className="btn-outline-gradient" style={{ padding: "0.8rem 1.75rem", borderRadius: "9px", textDecoration: "none", fontWeight: 500, fontSize: "0.95rem" }}>
-                Sign In
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-20">
+            <ShimmerButton className="text-base py-3.5 px-8 shadow-xl shadow-violet-200/60">
+              <Link href="/signup" className="flex items-center gap-2">
+                Analyse My Resume Free <ArrowRight className="w-4 h-4" />
               </Link>
-            )}
+            </ShimmerButton>
+            <Link
+              href="/#features"
+              className="flex items-center gap-2 text-slate-600 font-semibold hover:text-violet-700 transition-colors text-sm px-4 py-3.5"
+            >
+              See How It Works <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          <p style={{ fontSize: "0.8rem", color: "#94a3b8" }}>No card required · 3 free scans · Results in under 30 seconds</p>
 
-          {/* Score preview card */}
-          <div className="glass-card" style={{ marginTop: "3.5rem", maxWidth: "500px", margin: "3.5rem auto 0", padding: "1.75rem", textAlign: "left" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.25rem" }}>
-              <div>
-                <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.25rem" }}>ATS Compatibility Score</div>
-                <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#f97316", lineHeight: 1 }}>47<span style={{ fontSize: "1.25rem", color: "#94a3b8", fontWeight: 500 }}>/100</span></div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.5rem" }}>Issues Found</div>
-                <div style={{ display: "flex", gap: "0.375rem" }}>
-                  <span style={{ padding: "0.2rem 0.6rem", borderRadius: "6px", background: "#fef2f2", border: "1px solid #fecaca", fontSize: "0.72rem", color: "#dc2626", fontWeight: 600 }}>8 Critical</span>
-                  <span style={{ padding: "0.2rem 0.6rem", borderRadius: "6px", background: "#fffbeb", border: "1px solid #fde68a", fontSize: "0.72rem", color: "#d97706", fontWeight: 600 }}>12 Warnings</span>
+          {/* Floating mock score card */}
+          <div className="relative mx-auto max-w-sm">
+            <div className="absolute -inset-4 bg-gradient-to-br from-violet-200/40 to-cyan-200/40 rounded-3xl blur-2xl" />
+            <div className="relative glass-card rounded-2xl p-6 shadow-2xl shadow-violet-200/30 border border-white/70 text-left">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">ATS Match Score</p>
+                  <p className="text-4xl font-extrabold text-slate-900">
+                    <NumberTicker value={84} duration={1800} />
+                    <span className="text-lg font-normal text-slate-400 ml-1">/100</span>
+                  </p>
+                </div>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200">
+                  <TrendingUp className="w-7 h-7 text-white" />
                 </div>
               </div>
+              <div className="space-y-3">
+                {[
+                  { label: "Keyword Match", pct: 78, color: "from-violet-500 to-indigo-500" },
+                  { label: "Skills Alignment", pct: 85, color: "from-indigo-500 to-cyan-500" },
+                  { label: "Formatting", pct: 92, color: "from-emerald-500 to-teal-500" },
+                  { label: "Role Fit", pct: 71, color: "from-violet-500 to-purple-500" },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="flex justify-between text-xs text-slate-600 mb-1.5">
+                      <span className="font-medium">{item.label}</span>
+                      <span className="font-semibold">{item.pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${item.color} rounded-full`}
+                        style={{ width: `${item.pct}%`, transition: "width 2s cubic-bezier(0.4,0,0.2,1)" }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <p className="text-xs text-slate-500">Analysis complete — 3 critical improvements found</p>
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex flex-col sm:flex-row justify-center gap-10 mt-16">
+            {[
+              { value: 75, suffix: "%", label: "filtered before human review" },
+              { value: 6, suffix: "s", label: "average recruiter scan time" },
+              { value: 3, suffix: "×", label: "more interviews after optimising" },
+            ].map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="text-3xl font-extrabold gradient-text">
+                  <NumberTicker value={s.value} suffix={s.suffix} duration={2200} />
+                </p>
+                <p className="text-sm text-slate-400 mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── COMPANY TICKER ────────────────────────────────── */}
+      <section className="py-12 border-y border-slate-100 bg-slate-50/60">
+        <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
+          Candidates who landed roles at
+        </p>
+        <MarqueeRow speed="slow">
+          {COMPANY_LOGOS.map((logo) => (
+            <div
+              key={logo}
+              className="flex-shrink-0 px-7 py-2.5 bg-white border border-slate-200/80 rounded-full text-slate-600 font-semibold text-sm shadow-sm"
+            >
+              {logo}
+            </div>
+          ))}
+        </MarqueeRow>
+      </section>
+
+      {/* ── BENTO FEATURES ────────────────────────────────── */}
+      <section id="features" className="py-28 px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-16">
+          <p className="text-sm font-bold text-violet-600 uppercase tracking-widest mb-3">What we analyse</p>
+          <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">
+            Every reason your resume<br />
+            <span className="gradient-text">gets rejected — found.</span>
+          </h2>
+          <p className="text-lg text-slate-500 max-w-xl mx-auto leading-relaxed">
+            One upload. Five scoring dimensions. Specific, prioritised improvements.
+          </p>
+        </div>
+
+        <BentoGrid>
+          {/* ATS Score — 2-col 2-row */}
+          <BentoCard colSpan={2} rowSpan={2} className="bg-gradient-to-br from-violet-600 to-indigo-700 border-0 justify-between">
+            <div>
+              <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mb-4">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Instant ATS Score</h3>
+              <p className="text-white/70 text-sm leading-relaxed">
+                A precise 0–100 score across keyword match, skills, formatting, role fit, and experience — in under 30 seconds.
+              </p>
+            </div>
+            <div className="flex items-end gap-3 mt-6">
+              <span className="text-7xl font-extrabold text-white leading-none">84</span>
+              <span className="text-white/50 text-2xl mb-2">/100</span>
+            </div>
+          </BentoCard>
+
+          {/* Keyword Gap */}
+          <BentoCard colSpan={2} className="justify-between">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-cyan-100 flex items-center justify-center">
+                <Zap className="w-4.5 h-4.5 text-cyan-600" />
+              </div>
+              <h3 className="font-bold text-slate-900">Keyword Gap Analysis</h3>
+            </div>
+            <p className="text-slate-500 text-sm mb-4">Matches your resume against the job description word-for-word.</p>
+            <div className="flex flex-wrap gap-1.5">
               {[
-                { label: "Keyword Match", value: 38, color: "#ef4444" },
-                { label: "Format Score", value: 62, color: "#f59e0b" },
-                { label: "Skills Alignment", value: 45, color: "#ef4444" },
-                { label: "Readability", value: 71, color: "#7c3aed" },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#64748b", marginBottom: "0.3rem" }}>
-                    <span>{item.label}</span>
-                    <span style={{ color: item.color, fontWeight: 600 }}>{item.value}%</span>
-                  </div>
-                  <div style={{ height: "5px", borderRadius: "3px", background: "rgba(255,255,255,0.4)" }}>
-                    <div style={{ height: "100%", borderRadius: "3px", width: `${item.value}%`, background: item.color }} />
-                  </div>
+                { kw: "Python", match: true }, { kw: "AWS", match: true }, { kw: "Docker", match: true },
+                { kw: "Kubernetes", match: false }, { kw: "Terraform", match: false },
+              ].map(({ kw, match }) => (
+                <span
+                  key={kw}
+                  className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+                    match
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  }`}
+                >
+                  {match ? "✓" : "✗"} {kw}
+                </span>
+              ))}
+            </div>
+          </BentoCard>
+
+          {/* Section Review */}
+          <BentoCard>
+            <div className="w-9 h-9 rounded-lg bg-indigo-100 flex items-center justify-center mb-3">
+              <CheckCircle2 className="w-4.5 h-4.5 text-indigo-600" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-sm mb-3">Section Review</h3>
+            <div className="space-y-2">
+              {["Summary", "Experience", "Skills", "Education"].map((s) => (
+                <div key={s} className="flex items-center gap-2 text-xs text-slate-600">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span>{s}</span>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
+          </BentoCard>
 
-      {/* Ticker */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.6)", borderBottom: "1px solid rgba(255,255,255,0.6)", padding: "0.875rem 0", overflow: "hidden", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(8px)" }}>
-        <div className="animate-ticker" style={{ display: "flex", gap: "3rem", whiteSpace: "nowrap" }}>
-          {[...companies, ...companies].map((c, i) => (
-            <span key={i} style={{ fontSize: "0.85rem", color: "#94a3b8", fontWeight: 500, flexShrink: 0 }}>{c}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Features */}
-      <section style={{ padding: "6rem 0" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem" }}>
-          <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
-            <div style={{ display: "inline-block", padding: "0.3rem 0.875rem", borderRadius: "100px", border: "1px solid rgba(124,58,237,0.2)", background: "rgba(245,243,255,0.8)", fontSize: "0.78rem", color: "#7c3aed", fontWeight: 600, marginBottom: "1rem" }}>Features</div>
-            <h2 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>Precision, not guesswork</h2>
-            <p style={{ fontSize: "1rem", color: "#64748b", maxWidth: "520px", margin: "0 auto" }}>
-              Every feature is built around one question: exactly why is this resume underperforming?
-            </p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.25rem" }}>
-            {features.map((f) => (
-              <div key={f.title} className="glass-card" style={{ padding: "1.5rem" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "10px", background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", marginBottom: "1rem" }}>{f.icon}</div>
-                <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.4rem", color: "#0f172a" }}>{f.title}</h3>
-                <p style={{ fontSize: "0.875rem", color: "#64748b", lineHeight: 1.65 }}>{f.description}</p>
+          {/* Suggestions */}
+          <BentoCard colSpan={2}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-100 flex items-center justify-center">
+                <FileText className="w-4.5 h-4.5 text-violet-600" />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats strip */}
-      <section style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5, #06b6d4)", padding: "3rem 0", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.06)" }} />
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "2rem", textAlign: "center", position: "relative" }}>
-          {[
-            { value: "75%", label: "of resumes never reach a recruiter" },
-            { value: "6 sec", label: "average recruiter time per resume" },
-            { value: "3×", label: "more interviews with an optimised resume" },
-          ].map((stat) => (
-            <div key={stat.label}>
-              <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#fff", marginBottom: "0.375rem" }}>{stat.value}</div>
-              <div style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.75)", lineHeight: 1.5 }}>{stat.label}</div>
+              <h3 className="font-bold text-slate-900">Improvement Suggestions</h3>
             </div>
-          ))}
-        </div>
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <p className="text-xs text-slate-400 font-medium mb-1.5 uppercase tracking-wide">Before</p>
+              <p className="text-xs text-slate-600 line-through">&quot;Responsible for growing revenue&quot;</p>
+              <p className="text-xs text-slate-400 font-medium mb-1.5 mt-3 uppercase tracking-wide">After</p>
+              <p className="text-xs text-slate-800 font-medium">&quot;Drove $2.3M revenue uplift by leading 4 cross-functional teams across 3 regions.&quot;</p>
+            </div>
+          </BentoCard>
+
+          {/* Format Check */}
+          <BentoCard>
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center mb-3">
+              <Shield className="w-4.5 h-4.5 text-emerald-600" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-sm mb-1.5">Format Check</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">Checks fonts, columns, tables, graphics — everything that confuses ATS parsers.</p>
+          </BentoCard>
+
+          {/* Export */}
+          <BentoCard className="items-center justify-center text-center">
+            <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+              <Download className="w-5 h-5 text-slate-500" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-sm">Export Report</h3>
+            <p className="text-xs text-slate-400 mt-1">PDF & DOCX</p>
+          </BentoCard>
+        </BentoGrid>
       </section>
 
-      {/* Testimonials */}
-      <section style={{ padding: "6rem 0" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem" }}>
-          <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-            <h2 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.625rem" }}>Results that speak for themselves</h2>
-            <p style={{ color: "#64748b", fontSize: "1rem" }}>Job seekers who used ResumeIQ to land their next role</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem" }}>
-            {testimonials.map((t) => (
-              <div key={t.name} className="glass-card" style={{ padding: "1.5rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.875rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-                    <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.72rem", fontWeight: 700, color: "#7c3aed", flexShrink: 0 }}>{t.initials}</div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>{t.name}</div>
-                      <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{t.role} · {t.company}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: "1px" }}>
-                    {[...Array(5)].map((_, i) => <span key={i} style={{ color: "#f59e0b", fontSize: "0.75rem" }}>★</span>)}
-                  </div>
-                </div>
-                <p style={{ fontSize: "0.875rem", color: "#374151", lineHeight: 1.65 }}>&quot;{t.text}&quot;</p>
+      {/* ── STATS STRIP ───────────────────────────────────── */}
+      <section className="py-20 bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-600 relative overflow-hidden">
+        <div className="dot-grid absolute inset-0 opacity-10" />
+        <div className="relative z-10 max-w-4xl mx-auto px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 text-center">
+            {[
+              { value: 75, suffix: "%", label: "of resumes filtered before a human reads them" },
+              { value: 6, suffix: "s", label: "average time a recruiter spends on your resume" },
+              { value: 3, suffix: "×", label: "more interviews reported after optimising" },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="text-5xl font-extrabold text-white mb-2">
+                  <NumberTicker value={s.value} suffix={s.suffix} duration={2000} />
+                </p>
+                <p className="text-white/75 text-sm leading-relaxed">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section style={{ padding: "6rem 0" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem" }}>
-          <div style={{ textAlign: "center", marginBottom: "3.5rem" }}>
-            <h2 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.625rem" }}>Straightforward pricing</h2>
-            <p style={{ color: "#64748b", fontSize: "1rem" }}>Start free. No card required.</p>
-          </div>
-          <PricingSection mode="landing" />
+      {/* ── TESTIMONIALS ──────────────────────────────────── */}
+      <section className="py-24 overflow-hidden bg-slate-50/50">
+        <div className="text-center mb-12 px-4">
+          <p className="text-sm font-bold text-violet-600 uppercase tracking-widest mb-3">Results</p>
+          <h2 className="text-4xl font-extrabold text-slate-900 mb-3">What job seekers are saying</h2>
+          <p className="text-slate-500">Real outcomes. No cherry-picking.</p>
+        </div>
+        <div className="space-y-4">
+          <MarqueeRow pauseOnHover>
+            {row1.map((t) => <TestimonialCard key={t.name} {...t} />)}
+          </MarqueeRow>
+          <MarqueeRow reverse pauseOnHover>
+            {row2.map((t) => <TestimonialCard key={t.name} {...t} />)}
+          </MarqueeRow>
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ padding: "5rem 0" }}>
-        <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1.5rem", textAlign: "center" }}>
-          <div className="glass-card" style={{ maxWidth: "640px", margin: "0 auto", padding: "3.5rem 2rem" }}>
-            <h2 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.875rem" }}>
-              Ready to find out what&apos;s holding your resume back?
-            </h2>
-            <p style={{ color: "#64748b", fontSize: "1rem", marginBottom: "1.75rem" }}>Analyse your resume free. No card. Results in 30 seconds.</p>
-            <Link href={user ? "/upload" : "/signup"} className="btn-glow" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.8rem 2rem", borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "0.95rem" }}>
-              Start Free Analysis →
-            </Link>
+      {/* ── PRICING ───────────────────────────────────────── */}
+      <section id="pricing" className="py-24 px-4">
+        <div className="text-center mb-12">
+          <p className="text-sm font-bold text-violet-600 uppercase tracking-widest mb-3">Pricing</p>
+          <h2 className="text-4xl font-extrabold text-slate-900 mb-3">Simple, transparent pricing</h2>
+          <p className="text-slate-500">Start free. Upgrade only when you need more.</p>
+        </div>
+        <PricingSection mode="landing" />
+      </section>
+
+      {/* ── FINAL CTA ─────────────────────────────────────── */}
+      <section className="py-24 px-4 bg-slate-50/50">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="relative inline-block w-full">
+            <div className="absolute -inset-1 bg-gradient-to-br from-violet-400/30 to-cyan-400/30 rounded-3xl blur-2xl" />
+            <div className="relative glass-card rounded-3xl p-12">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+                Find out what&apos;s holding your resume back
+              </h2>
+              <p className="text-slate-500 text-lg mb-8 leading-relaxed">
+                Free analysis. No credit card. Under 30 seconds.
+              </p>
+              <ShimmerButton className="text-base py-3.5 px-10 shadow-xl shadow-violet-200/60">
+                <Link href="/signup" className="flex items-center gap-2">
+                  Start Free Analysis <ArrowRight className="w-4 h-4" />
+                </Link>
+              </ShimmerButton>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.6)", padding: "1.75rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <div style={{ width: "26px", height: "26px", borderRadius: "6px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", fontSize: "12px" }}>R</div>
-          <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0f172a" }}>ResumeIQ</span>
-        </div>
-        <div style={{ display: "flex", gap: "1.5rem" }}>
-          {["Privacy", "Terms", "Contact"].map((item) => (
-            <span key={item} style={{ fontSize: "0.8rem", color: "#94a3b8", cursor: "pointer" }}>{item}</span>
-          ))}
-        </div>
-        <div style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>© 2025 ResumeIQ</div>
-      </footer>
+      <Footer />
     </div>
   );
 }

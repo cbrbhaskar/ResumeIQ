@@ -1,175 +1,222 @@
-import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { requireAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { getUserUsage } from "@/lib/usage";
-import { formatDate, getScoreLabel, getPlanDisplayName } from "@/lib/utils";
-import { Scan } from "@/lib/types";
-import { GlowingEffect } from "@/components/ui/glowing-effect";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Zap, TrendingUp, Award, Plus, ArrowRight } from "lucide-react";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { MiniSparkline } from "@/components/ui/mini-sparkline";
 
-export const dynamic = "force-dynamic";
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
-function getScoreColor(score: number): string {
-  if (score >= 80) return "#22c55e";
-  if (score >= 60) return "#f59e0b";
-  return "#ef4444";
+function ScoreBadge({ score }: { score: number }) {
+  const cfg =
+    score >= 70
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : score >= 50
+      ? "bg-amber-50 text-amber-700 border-amber-200"
+      : "bg-red-50 text-red-700 border-red-200";
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${cfg}`}>
+      {score}/100
+    </span>
+  );
 }
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return null;
+  const user = await requireAuth();
+  if (!user) redirect("/login");
 
-  const userId = (session.user as { id: string }).id;
-
-  const [usage, recentPrismaScans, profile] = await Promise.all([
-    getUserUsage(userId),
+  const [profile, usage, scans] = await Promise.all([
+    prisma.profile.findUnique({ where: { userId: user.id } }),
+    prisma.usageCount.findUnique({ where: { userId: user.id } }),
     prisma.scan.findMany({
-      where: { userId, status: "completed" },
-      select: { id: true, userId: true, jobTitle: true, atsScore: true, status: true, createdAt: true, resumeFilename: true },
+      where: { userId: user.id, status: "completed" },
+      include: { result: true },
       orderBy: { createdAt: "desc" },
-      take: 5,
+      take: 10,
     }),
-    prisma.profile.findUnique({ where: { userId }, select: { fullName: true, plan: true } }),
   ]);
 
-  const scans = recentPrismaScans.map((s) => ({
-    id: s.id,
-    user_id: s.userId,
-    job_title: s.jobTitle,
-    ats_score: s.atsScore,
-    status: s.status,
-    created_at: s.createdAt.toISOString(),
-    resume_filename: s.resumeFilename,
-  })) as Scan[];
-
-  const firstName = profile?.fullName?.split(" ")[0] || "there";
-  const avgScore = scans.length > 0 ? Math.round(scans.reduce((a, s) => a + (s.ats_score || 0), 0) / scans.length) : null;
-  const bestScore = scans.length > 0 ? Math.max(...scans.map((s) => s.ats_score || 0)) : null;
-
-  const card = { position: "relative", background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.8)", borderRadius: "14px", padding: "1.375rem", boxShadow: "0 8px 32px rgba(124,58,237,0.07), 0 2px 8px rgba(0,0,0,0.05)" } as React.CSSProperties;
+  const scansUsed = usage?.scansUsed ?? 0;
+  const scansLimit = usage?.scansLimit ?? 3;
+  const isPro = profile?.plan !== "free";
+  const scores = scans.map((s) => s.result?.overallScore ?? 0).filter(Boolean);
+  const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+  const bestScore = scores.length ? Math.max(...scores) : 0;
+  const sparkData = [...scans].reverse().slice(-5).map((s) => ({ score: s.result?.overallScore ?? 0 }));
+  const firstName = (user.name ?? "there").split(" ")[0];
 
   return (
-    <div style={{ color: "#0f172a", fontFamily: "'Instrument Sans', sans-serif" }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/20 p-6 md:p-8">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem", flexWrap: "wrap", gap: "1rem" }}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 style={{ fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.2rem" }}>Good to see you, {firstName}</h1>
-          <p style={{ fontSize: "0.875rem", color: "#64748b" }}>Here&apos;s your scan activity at a glance</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {getGreeting()}, {firstName} 👋
+          </h1>
+          <p className="text-slate-500 text-sm mt-0.5">Here&apos;s your resume performance at a glance.</p>
         </div>
-        <Link href="/upload" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.6rem 1.125rem", borderRadius: "8px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff", fontWeight: 700, fontSize: "0.875rem", textDecoration: "none", boxShadow: "0 4px 12px rgba(124,58,237,0.2)" }}>
-          + New Scan
+        <Link href="/upload">
+          <ShimmerButton className="text-sm py-2.5 px-5">
+            <Plus className="w-4 h-4" /> New Scan
+          </ShimmerButton>
         </Link>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-        <div style={card}>
-          <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.875rem" }}>
-            <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f5f3ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem" }}>📊</div>
-            <span style={{ fontSize: "0.68rem", fontWeight: 600, padding: "0.2rem 0.575rem", borderRadius: "100px", background: usage.plan === "free" ? "#f1f5f9" : "#f5f3ff", border: usage.plan === "free" ? "1px solid #e2e8f0" : "1px solid #ede9fe", color: usage.plan === "free" ? "#64748b" : "#7c3aed", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
-              {getPlanDisplayName(usage.plan)}
-            </span>
+      {/* Upgrade banner — free users near limit */}
+      {!isPro && scansUsed >= scansLimit - 1 && (
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-2xl px-5 py-4 shadow-lg shadow-violet-200/40">
+          <div>
+            <p className="font-semibold text-white text-sm">
+              {scansLimit - scansUsed} free scan{scansLimit - scansUsed !== 1 ? "s" : ""} remaining
+            </p>
+            <p className="text-white/65 text-xs mt-0.5">Upgrade to Pro for unlimited scans</p>
           </div>
-          <p style={{ fontSize: "1.9rem", fontWeight: 800, color: "#0f172a", marginBottom: "0.2rem", lineHeight: 1 }}>
-            {usage.plan === "free" ? usage.scans_limit - usage.scans_used : "∞"}
+          <Link
+            href="/billing"
+            className="shrink-0 bg-white text-violet-700 text-xs font-bold px-4 py-2 rounded-xl hover:bg-violet-50 transition-colors flex items-center gap-1.5"
+          >
+            Upgrade to Pro <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* Stats row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {/* Scans Used */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+              <Zap className="w-5 h-5 text-violet-600" />
+            </div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Scans Used</span>
+          </div>
+          <p className="text-3xl font-extrabold text-slate-900">
+            {isPro ? (
+              <NumberTicker value={scansUsed} duration={800} />
+            ) : (
+              <>
+                <NumberTicker value={scansUsed} duration={800} />
+                <span className="text-lg font-normal text-slate-300 ml-1">/ {scansLimit}</span>
+              </>
+            )}
           </p>
-          <p style={{ fontSize: "0.775rem", color: "#64748b" }}>Scans remaining</p>
-          {usage.plan === "free" && (
-            <div style={{ marginTop: "0.75rem" }}>
-              <div style={{ height: "4px", borderRadius: "2px", background: "#f1f5f9", overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: "2px", width: `${(usage.scans_used / usage.scans_limit) * 100}%`, background: usage.scans_used >= usage.scans_limit ? "#ef4444" : "#7c3aed" }} />
+          {!isPro && (
+            <div className="mt-3">
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min((scansUsed / scansLimit) * 100, 100)}%` }}
+                />
               </div>
-              <p style={{ fontSize: "0.7rem", color: "#94a3b8", marginTop: "0.3rem" }}>{usage.scans_used}/{usage.scans_limit} used</p>
+              <p className="text-xs text-slate-400 mt-1.5">{scansLimit - scansUsed} remaining</p>
             </div>
           )}
+          {isPro && <p className="text-xs text-violet-500 font-medium mt-1">Unlimited — Pro plan</p>}
         </div>
 
-        <div style={card}>
-          <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
-          <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", marginBottom: "0.875rem" }}>📄</div>
-          <p style={{ fontSize: "1.9rem", fontWeight: 800, color: "#0f172a", marginBottom: "0.2rem", lineHeight: 1 }}>{scans.length}</p>
-          <p style={{ fontSize: "0.775rem", color: "#64748b" }}>Total scans</p>
+        {/* Avg Score */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-indigo-600" />
+            </div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Avg Score</span>
+          </div>
+          {avgScore > 0 ? (
+            <p className={`text-3xl font-extrabold ${avgScore >= 70 ? "text-emerald-600" : avgScore >= 50 ? "text-amber-600" : "text-red-500"}`}>
+              <NumberTicker value={avgScore} suffix="/100" duration={1200} />
+            </p>
+          ) : (
+            <p className="text-2xl font-extrabold text-slate-300">—</p>
+          )}
+          <p className="text-xs text-slate-400 mt-1.5">across all completed scans</p>
         </div>
 
-        <div style={card}>
-          <GlowingEffect spread={40} glow={true} disabled={false} proximity={64} inactiveZone={0.01} borderWidth={2} />
-          <div style={{ width: "36px", height: "36px", borderRadius: "9px", background: "#fffbeb", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", marginBottom: "0.875rem" }}>📈</div>
-          <p style={{ fontSize: "1.9rem", fontWeight: 800, marginBottom: "0.2rem", lineHeight: 1, color: avgScore ? getScoreColor(avgScore) : "#e2e8f0" }}>
-            {avgScore ?? "—"}
-          </p>
-          <p style={{ fontSize: "0.775rem", color: "#64748b" }}>
-            Avg ATS score
-            {bestScore && bestScore !== avgScore && <span style={{ color: "#94a3b8", marginLeft: "0.25rem" }}>· best {bestScore}</span>}
-          </p>
+        {/* Best Score */}
+        <div className="glass-card rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+              <Award className="w-5 h-5 text-amber-500" />
+            </div>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Best Score</span>
+          </div>
+          {bestScore > 0 ? (
+            <p className="text-3xl font-extrabold text-slate-900">
+              <NumberTicker value={bestScore} suffix="/100" duration={1200} />
+            </p>
+          ) : (
+            <p className="text-2xl font-extrabold text-slate-300">—</p>
+          )}
+          <p className="text-xs text-slate-400 mt-1.5">your personal best</p>
         </div>
       </div>
 
+      {/* Score sparkline */}
+      {sparkData.length >= 2 && (
+        <div className="glass-card rounded-2xl p-5 mb-6">
+          <p className="text-sm font-semibold text-slate-700 mb-3">ATS score over time</p>
+          <MiniSparkline data={sparkData} />
+        </div>
+      )}
+
       {/* Recent scans */}
-      <div style={{ background: "rgba(255,255,255,0.65)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.8)", borderRadius: "14px", overflow: "hidden", marginBottom: "1.5rem", boxShadow: "0 8px 32px rgba(124,58,237,0.07), 0 2px 8px rgba(0,0,0,0.05)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.375rem", borderBottom: "1px solid #f1f5f9" }}>
-          <h2 style={{ fontSize: "0.875rem", fontWeight: 700, color: "#0f172a" }}>Recent Scans</h2>
-          <Link href="/history" style={{ fontSize: "0.775rem", color: "#7c3aed", textDecoration: "none", fontWeight: 600 }}>View all →</Link>
+      <div className="glass-card rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-slate-900">Recent Scans</h2>
+          {scans.length > 0 && (
+            <Link href="/history" className="text-xs text-violet-600 font-semibold hover:underline">
+              View all →
+            </Link>
+          )}
         </div>
 
         {scans.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "3rem 1.5rem" }}>
-            <div style={{ width: "48px", height: "48px", borderRadius: "12px", border: "2px dashed #d1d5db", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 0.875rem", fontSize: "1.25rem" }}>📄</div>
-            <p style={{ fontWeight: 600, fontSize: "0.9rem", color: "#0f172a", marginBottom: "0.375rem" }}>No scans yet</p>
-            <p style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "1.125rem" }}>Upload your resume and a job description to get your first ATS score</p>
-            <Link href="/upload" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.575rem 1rem", borderRadius: "8px", background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff", fontWeight: 700, fontSize: "0.8rem", textDecoration: "none" }}>
-              Start first scan
+          <div className="text-center py-14">
+            <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-7 h-7 text-violet-400" />
+            </div>
+            <p className="text-slate-700 font-semibold mb-1">No scans yet</p>
+            <p className="text-slate-400 text-sm mb-5">
+              Upload your resume and a job description to get your first score.
+            </p>
+            <Link href="/upload">
+              <ShimmerButton className="text-sm py-2.5 px-6">
+                Analyse My Resume <ArrowRight className="w-3.5 h-3.5" />
+              </ShimmerButton>
             </Link>
           </div>
         ) : (
-          <div>
-            {scans.map((scan, i) => (
+          <div className="divide-y divide-slate-100/80">
+            {scans.map((scan) => (
               <Link
                 key={scan.id}
                 href={`/results/${scan.id}`}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0.875rem 1.375rem", borderBottom: i < scans.length - 1 ? "1px solid #f8fafc" : "none", textDecoration: "none" }}
+                className="flex items-center justify-between py-3.5 -mx-2 px-2 rounded-xl hover:bg-violet-50/60 transition-colors group"
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 }}>
-                  <div style={{ width: "34px", height: "34px", borderRadius: "8px", background: "#f5f3ff", border: "1px solid #ede9fe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", flexShrink: 0 }}>📄</div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: "0.875rem", fontWeight: 500, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {scan.job_title || scan.resume_filename || "Resume Scan"}
-                    </p>
-                    <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "0.1rem" }}>{formatDate(scan.created_at)}</p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm group-hover:text-violet-700 transition-colors truncate">
+                    {scan.jobTitle ?? "Untitled Position"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {new Date(scan.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
-                  {scan.ats_score !== null && (
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ fontSize: "1.1rem", fontWeight: 800, color: getScoreColor(scan.ats_score), lineHeight: 1 }}>{scan.ats_score}</p>
-                      <p style={{ fontSize: "0.65rem", color: "#94a3b8", marginTop: "0.1rem" }}>{getScoreLabel(scan.ats_score)}</p>
-                    </div>
-                  )}
-                  <span style={{ color: "#d1d5db", fontSize: "0.875rem" }}>→</span>
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  {scan.result && <ScoreBadge score={scan.result.overallScore} />}
+                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-violet-400 transition-colors" />
                 </div>
               </Link>
             ))}
           </div>
         )}
       </div>
-
-      {/* Upgrade CTA */}
-      {usage.plan === "free" && usage.scans_used >= 2 && (
-        <div style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)", borderRadius: "14px", padding: "1.375rem 1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", boxShadow: "0 4px 16px rgba(124,58,237,0.2)" }}>
-          <div>
-            <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase" as const, letterSpacing: "0.06em", marginBottom: "0.25rem" }}>
-              {usage.scans_used >= 3 ? "Limit reached" : "Running low"}
-            </div>
-            <p style={{ fontWeight: 700, fontSize: "0.975rem", color: "#fff", marginBottom: "0.2rem" }}>
-              {usage.scans_used >= 3 ? "You've used all 3 free scans" : "Only 1 free scan remaining"}
-            </p>
-            <p style={{ fontSize: "0.825rem", color: "rgba(255,255,255,0.7)" }}>Upgrade to Professional for unlimited scans and full reports</p>
-          </div>
-          <Link href="/billing" style={{ display: "inline-flex", alignItems: "center", gap: "0.375rem", padding: "0.6rem 1.125rem", borderRadius: "8px", background: "#fff", color: "#7c3aed", fontWeight: 700, fontSize: "0.875rem", textDecoration: "none", flexShrink: 0 }}>
-            Upgrade →
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

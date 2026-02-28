@@ -1,166 +1,138 @@
 "use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { BarChart2, Menu, X, Zap, Sun, Moon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { signOut } from "next-auth/react";
-import { useTheme } from "next-themes";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { Menu, X, BarChart2, ArrowRight } from "lucide-react";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { cn } from "@/lib/utils";
 
-interface NavbarProps {
-  user?: { email: string; id: string } | null;
-}
+export default function Navbar() {
+  const { data: session } = useSession();
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
 
-export function Navbar({ user }: NavbarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const router = useRouter();
-  const { theme, setTheme } = useTheme();
-
-  useEffect(() => setMounted(true), []);
-
-  async function handleSignOut() {
-    await signOut({ callbackUrl: "/" });
-    router.refresh();
-  }
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800">
+    <header
+      className={cn(
+        "fixed top-0 inset-x-0 z-50 transition-all duration-300",
+        scrolled
+          ? "glass-nav shadow-sm shadow-violet-100/50 border-b border-slate-100/80"
+          : "bg-transparent"
+      )}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-md group-hover:shadow-violet-200 transition-shadow">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-md shadow-violet-200">
               <BarChart2 className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-gray-900 dark:text-white">ResumeIQ</span>
+            <span className="font-bold text-lg text-slate-900 tracking-tight">
+              Resume<span className="gradient-text">Ops</span>
+            </span>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop links */}
+          <nav className="hidden md:flex items-center gap-1">
             <Link
-              href="/pricing"
-              className="text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
+              href="/#features"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
+            >
+              Features
+            </Link>
+            <Link
+              href="/#pricing"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
             >
               Pricing
             </Link>
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Button variant="soft" size="sm" onClick={handleSignOut}>
-                  Sign Out
-                </Button>
-              </>
+            {session ? (
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
+              >
+                Dashboard
+              </Link>
             ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="text-sm text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Button size="sm" asChild>
-                  <Link href="/signup">
-                    <Zap className="w-4 h-4" />
-                    Get Started
-                  </Link>
-                </Button>
-              </>
-            )}
-
-            {/* Theme toggle */}
-            {mounted && (
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                aria-label="Toggle theme"
+              <Link
+                href="/login"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-violet-700 hover:bg-violet-50 transition-all"
               >
-                {theme === "dark" ? (
-                  <Sun className="w-4 h-4 text-zinc-400 hover:text-zinc-200" />
-                ) : (
-                  <Moon className="w-4 h-4 text-gray-500 hover:text-gray-700" />
-                )}
-              </button>
+                Sign In
+              </Link>
+            )}
+          </nav>
+
+          {/* CTA */}
+          <div className="hidden md:flex items-center gap-3">
+            {session ? (
+              <ShimmerButton
+                className="text-sm py-2 px-5"
+                onClick={() => { window.location.href = "/upload"; }}
+              >
+                New Scan <ArrowRight className="w-3.5 h-3.5" />
+              </ShimmerButton>
+            ) : (
+              <ShimmerButton
+                className="text-sm py-2 px-5"
+                onClick={() => { window.location.href = "/signup"; }}
+              >
+                Get Free Score <ArrowRight className="w-3.5 h-3.5" />
+              </ShimmerButton>
             )}
           </div>
 
-          {/* Mobile right side */}
-          <div className="md:hidden flex items-center gap-1">
-            {mounted && (
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-4 h-4 text-zinc-400" />
-                ) : (
-                  <Moon className="w-4 h-4 text-gray-500" />
-                )}
-              </button>
-            )}
-            <button
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-600 dark:text-zinc-400"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3 space-y-2">
+      {open && (
+        <div className="md:hidden border-t border-slate-100 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1">
           <Link
-            href="/pricing"
-            className="block py-2 text-sm text-gray-700 dark:text-zinc-300 font-medium"
-            onClick={() => setMobileOpen(false)}
+            href="/#features"
+            className="block px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            Features
+          </Link>
+          <Link
+            href="/#pricing"
+            className="block px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+            onClick={() => setOpen(false)}
           >
             Pricing
           </Link>
-          {user ? (
-            <>
-              <Link
-                href="/dashboard"
-                className="block py-2 text-sm text-gray-700 dark:text-zinc-300 font-medium"
-                onClick={() => setMobileOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="block w-full text-left py-2 text-sm text-gray-700 dark:text-zinc-300 font-medium"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="block py-2 text-sm text-gray-700 dark:text-zinc-300 font-medium"
-                onClick={() => setMobileOpen(false)}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="block py-2 text-sm font-medium text-violet-600 dark:text-violet-400"
-                onClick={() => setMobileOpen(false)}
-              >
-                Get Started Free
-              </Link>
-            </>
-          )}
+          <Link
+            href={session ? "/dashboard" : "/login"}
+            className="block px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+            onClick={() => setOpen(false)}
+          >
+            {session ? "Dashboard" : "Sign In"}
+          </Link>
+          <div className="pt-2">
+            <ShimmerButton
+              className="w-full text-sm py-2.5 justify-center"
+              onClick={() => { window.location.href = session ? "/upload" : "/signup"; }}
+            >
+              {session ? "New Scan" : "Get Free Score"} <ArrowRight className="w-3.5 h-3.5" />
+            </ShimmerButton>
+          </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }
